@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from pathlib import Path
+from datetime import date
 
 from calculations.critical_power import calc_critical_power
 from calculations.vo2max import calc_vo2max
@@ -13,7 +15,10 @@ st.set_page_config(page_title="360 Coaching Lab – Performance Analyzer", page_
 
 st.title("🚴 360 Coaching Lab – Performance Analyzer")
 st.markdown("#### Leistungsdiagnostik & physiologische Analyse")
-st.sidebar.markdown("**Version:** 1.7 – VLamax empirisch (LOOCV-optimiert)**")
+st.sidebar.markdown("**Version:** 1.8 – Datenlogging + Dashboards**")
+
+# --- Athlete name (required for saving) ---
+athlete_name = st.text_input("Athletenname", placeholder="z. B. Lars Blum")
 
 st.header("📥 Eingabe der Testdaten")
 col1, col2, col3 = st.columns(3)
@@ -31,6 +36,10 @@ with col3:
     peak20 = st.number_input("20s Peak-Leistung (W)", 300, 1800, 900)
 
 if st.button("Analyse starten 🚀"):
+    if not athlete_name.strip():
+        st.warning("Bitte **Athletenname** eingeben, damit der Test gespeichert werden kann.")
+        st.stop()
+
     ftp, w_prime = calc_critical_power(p5min, p12min, peak20)
     vo2_abs, vo2_rel = calc_vo2max(p5min, weight, gender)
     ffm = weight * (1 - bodyfat / 100)
@@ -43,12 +52,12 @@ if st.button("Analyse starten 🚀"):
     st.subheader("📊 Ergebnisse")
     df = pd.DataFrame({
         "Parameter": [
-            "FTP/CP", "W′", "VO₂max (l/min)", "VO₂max rel. (ml/min/kg)",
+            "Datum", "Name", "FTP/CP", "W′", "VO₂max (l/min)", "VO₂max rel. (ml/min/kg)",
             "VLaMax", "FatMax (W)", "FatMax (%FTP)",
             "Empf. GA1-Zone (W)", "Empf. GA1-Zone (%FTP)", "Athletentyp"
         ],
         "Wert": [
-            ftp, w_prime, round(vo2_abs,2), round(vo2_rel,1),
+            str(date.today()), athlete_name, ftp, w_prime, round(vo2_abs,2), round(vo2_rel,1),
             round(vlamax,3), f"**{round(fatmax_w,1)}**", f"**{round(fatmax_pct_ftp,1)} %**",
             f"{int(ga1_min)}–{int(ga1_max)}", f"{round(ga1_pct_min,1)}–{round(ga1_pct_max,1)} %", athlete_type
         ]
@@ -68,5 +77,32 @@ if st.button("Analyse starten 🚀"):
     ax.set_ylabel("Leistung (W)")
     ax.set_title("Leistungsprofil")
     st.pyplot(fig)
+
+    # --- Save result row to CSV in repo: data/athleten_daten.csv ---
+    save_row = {
+        "Datum": str(date.today()),
+        "Name": athlete_name,
+        "Geschlecht": gender,
+        "Gewicht (kg)": weight,
+        "Körperfett (%)": bodyfat,
+        "VO2max rel (ml/min/kg)": round(vo2_rel,1),
+        "VO2max abs (l/min)": round(vo2_abs,2),
+        "FTP (W)": ftp,
+        "VLamax (mmol/l/s)": round(vlamax,3),
+        "FatMax (W)": round(fatmax_w,1),
+        "Athletentyp": athlete_type,
+    }
+    data_dir = Path("data"); data_dir.mkdir(exist_ok=True)
+    csv_path = data_dir / "athleten_daten.csv"
+    try:
+        if csv_path.exists():
+            old = pd.read_csv(csv_path)
+            new = pd.concat([old, pd.DataFrame([save_row])], ignore_index=True)
+        else:
+            new = pd.DataFrame([save_row])
+        new.to_csv(csv_path, index=False)
+        st.success(f"Datensatz gespeichert → {csv_path}")
+    except Exception as e:
+        st.warning(f"Konnte CSV nicht schreiben: {e}")
 
     st.success("Analyse abgeschlossen ✅")
