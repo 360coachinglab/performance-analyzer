@@ -1,14 +1,3 @@
-# 🚴 360 Coaching Lab – Performance Analyzer
+# 360 Coaching Lab – Performance Analyzer (v1.6)
 
-Ein Streamlit-basiertes Tool zur Leistungsdiagnostik im Ausdauersport.
-
-## Starten (lokal)
-```bash
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-## Deployment
-1. Repository auf GitHub pushen  
-2. App bei Streamlit Cloud deployen  
-3. Fertig 🎯
+Ergänzt: Empfohlene GA1-Zone basierend auf FatMax & VLamax in Ergebnistabelle.
