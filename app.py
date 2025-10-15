@@ -13,7 +13,7 @@ st.set_page_config(page_title="360 Coaching Lab – Performance Analyzer", page_
 
 st.title("🚴 360 Coaching Lab – Performance Analyzer")
 st.markdown("#### Leistungsdiagnostik & physiologische Analyse")
-st.sidebar.markdown("**Version:** 1.6 – GA1-Zone (empfohlen)**")
+st.sidebar.markdown("**Version:** 1.7 – VLamax empirisch (LOOCV-optimiert)**")
 
 st.header("📥 Eingabe der Testdaten")
 col1, col2, col3 = st.columns(3)
@@ -53,7 +53,8 @@ if st.button("Analyse starten 🚀"):
             f"{int(ga1_min)}–{int(ga1_max)}", f"{round(ga1_pct_min,1)}–{round(ga1_pct_max,1)} %", athlete_type
         ]
     })
-    st.markdown(df.to_markdown(index=False), unsafe_allow_html=True)
+    from tabulate import tabulate
+    st.markdown(tabulate(df, headers='keys', tablefmt='github', showindex=False))
 
     st.subheader("🏁 Trainingszonen (metabolisch)")
     st.dataframe(zones)
