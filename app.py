@@ -14,10 +14,11 @@ st.set_page_config(page_title="360 Coaching Lab – Performance Analyzer", page_
 st.title("🚴 360 Coaching Lab – Performance Analyzer")
 st.markdown("#### Leistungsdiagnostik & physiologische Analyse")
 
-st.sidebar.image("assets/logo.png", use_container_width=True)
-st.sidebar.markdown("**Version:** 1.0.0")
+# Logo optional
+# st.sidebar.image("assets/logo.png", use_container_width=True)
+st.sidebar.markdown("**Version:** 1.1.0")
 
-# --- Eingabeformular ---
+# Eingabeformular
 st.header("📥 Eingabe der Testdaten")
 
 col1, col2, col3 = st.columns(3)
@@ -39,14 +40,23 @@ if st.button("Analyse starten 🚀"):
     vo2_abs, vo2_rel = calc_vo2max(p5min, weight, gender)
     ffm = weight * (1 - bodyfat / 100)
     vlamax = calc_vlamax(ffm, p20s, ftp, gender)
-    fatmax = calc_fatmax(vo2_rel, vlamax)
+    fatmax_w, fatmax_vo2perc, fatmax_ftpperc, fatmax_zone = calc_fatmax(vo2_rel, vlamax, ftp)
     zones = calc_zones(ftp, hfmax)
     athlete_type = determine_athlete_type(vo2_rel, vlamax, ftp, weight)
 
     st.subheader("📊 Ergebnisse")
     df = pd.DataFrame({
-        "Parameter": ["FTP/CP", "W′", "VO₂max (l/min)", "VO₂max rel. (ml/min/kg)", "VLaMax", "FatMax (W)", "Athletentyp"],
-        "Wert": [ftp, w_prime, round(vo2_abs,2), round(vo2_rel,1), round(vlamax,3), round(fatmax,1), athlete_type]
+        "Parameter": [
+            "FTP/CP", "W′", "VO₂max (l/min)", "VO₂max rel. (ml/min/kg)",
+            "VLaMax", "FatMax (W)", "FatMax (%VO₂max)", "FatMax (%FTP)",
+            "FatMax Zone", "Athletentyp"
+        ],
+        "Wert": [
+            ftp, w_prime, round(vo2_abs,2), round(vo2_rel,1),
+            round(vlamax,3), round(fatmax_w,1),
+            f"{round(fatmax_vo2perc,1)} %", f"{round(fatmax_ftpperc,1)} %",
+            fatmax_zone, athlete_type
+        ]
     })
     st.table(df)
 
