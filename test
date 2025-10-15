@@ -1,0 +1,23 @@
+performance-analyzer/
+│
+├── app.py
+├── requirements.txt
+├── README.md
+├── calculations/
+│   ├── critical_power.py
+│   ├── vo2max.py
+│   ├── vlamax.py
+│   ├── fatmax.py
+│   └── zones.py
+│
+├── utils/
+│   ├── athlete_type.py
+│   ├── power_profile.py
+│   └── pdf_export.py
+│
+├── assets/
+│   ├── logo.png
+│   └── style.css
+│
+└── .streamlit/
+    └── config.toml
