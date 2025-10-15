@@ -1,1 +1,1 @@
-Datum,Name,Geschlecht,Gewicht (kg),Körperfett (%),VO2max rel (ml/min/kg),VO2max abs (l/min),FTP (W),VLamax (mmol/l/s),FatMax (W),Athletentyp
+Datum,Name,VO2max rel (ml/min/kg),VLamax (mmol/l/s),FTP (W),FatMax (W)
