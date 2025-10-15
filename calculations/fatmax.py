@@ -1,13 +1,17 @@
 def calc_fatmax(vo2_rel, vlamax, ftp):
-    """Berechnet FatMax (Watt und qualitative Zone) basierend auf VO2max, VLamax und FTP."""
-    fatmax_percent_vo2 = 65 - (vlamax * 35) + ((vo2_rel - 60) * 0.5)
-    fatmax_percent_vo2 = max(45, min(80, fatmax_percent_vo2))
-    fatmax_percent_ftp = (fatmax_percent_vo2 / 100) * 0.85
-    fatmax_watt = ftp * fatmax_percent_ftp
-    if fatmax_percent_ftp < 0.55:
-        zone = "Zone 2 (niedriger GA1)"
-    elif fatmax_percent_ftp < 0.70:
+    """
+    Empirisch kalibriertes FatMax-Modell basierend auf realen Daten.
+    FatMax_%FTP = 67.72 + 0.065 * VO2_rel - 11.42 * VLamax
+    """
+    fatmax_pct_ftp = 67.72 + (0.065 * vo2_rel) - (11.42 * vlamax)
+    fatmax_pct_ftp = max(55.0, min(85.0, fatmax_pct_ftp))
+    fatmax_w = ftp * (fatmax_pct_ftp / 100)
+
+    # Zonenbezeichnung basierend auf %FTP
+    if fatmax_pct_ftp < 60:
+        zone = "Zone 2 (unterer GA1)"
+    elif fatmax_pct_ftp < 70:
         zone = "Zone 2–3 (oberer GA1)"
     else:
         zone = "Zone 3 (GA2)"
-    return fatmax_watt, fatmax_percent_vo2, fatmax_percent_ftp * 100, zone
+    return fatmax_w, fatmax_pct_ftp, zone

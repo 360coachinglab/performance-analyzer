@@ -1,14 +1,24 @@
 import pandas as pd
 
-def calc_zones(ftp, hfmax):
-    data = [
-        ('Z1 - Regeneration', 0.0, 0.55),
-        ('Z2 - GA1', 0.56, 0.75),
-        ('Z3 - GA2', 0.76, 0.9),
-        ('Z4 - Schwelle', 0.91, 1.05),
-        ('Z5 - VO₂max', 1.06, 1.20),
+def calc_zones(ftp, hfmax, fatmax, vlamax):
+    """
+    Erstellt metabolisch adaptierte Trainingszonen basierend auf FatMax und VLamax.
+    """
+    # Dynamische Grenzen in Abhängigkeit von VLamax
+    z1_upper = 0.75 * fatmax
+    z2_upper = 1.05 * fatmax
+    z3_upper = (1.2 - vlamax * 0.3) * fatmax
+    z4_upper = ftp
+
+    zones = [
+        ("Z1 - Regeneration", 0, z1_upper, "Sehr locker, aktive Erholung"),
+        ("Z2 - GA1 (Fettstoffwechsel)", z1_upper, z2_upper, "Fettoxidation dominant"),
+        ("Z3 - GA2 (Übergang)", z2_upper, z3_upper, "Mischstoffwechsel"),
+        ("Z4 - Schwelle", z3_upper, z4_upper, "MLSS / FTP Bereich"),
+        ("Z5 - VO2max", z4_upper, ftp * 1.2, "Intensive Reize"),
     ]
-    df = pd.DataFrame(data, columns=['Zone', '%FTP von', '%FTP bis'])
-    df['Leistung (W)'] = [f"{int(ftp*a)}–{int(ftp*b)}" for _, a, b in data]
-    df['Herzfrequenz (HF)'] = [f"{int(hfmax*a)}–{int(hfmax*b)}" for _, a, b in data]
+
+    df = pd.DataFrame(zones, columns=["Zone", "von (W)", "bis (W)", "Beschreibung"])
+    df["von (W)"] = df["von (W)"].round(0)
+    df["bis (W)"] = df["bis (W)"].round(0)
     return df
