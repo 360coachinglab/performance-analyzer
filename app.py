@@ -13,9 +13,16 @@ from utils.athlete_type import determine_athlete_type
 
 st.set_page_config(page_title="360 Coaching Lab – Performance Analyzer", page_icon="🚴", layout="wide")
 
+# Sidebar Branding + Navigation
+st.sidebar.markdown("### 🧬 360 Coaching Lab")
+st.sidebar.markdown("---")
+st.sidebar.page_link("app.py", label="🚴 Performance Analyzer")
+st.sidebar.page_link("pages/Dashboards.py", label="📊 Dashboards")
+st.sidebar.markdown("---")
+st.sidebar.markdown("**Version:** 1.8.1 – Sidebar Navigation**")
+
 st.title("🚴 360 Coaching Lab – Performance Analyzer")
 st.markdown("#### Leistungsdiagnostik & physiologische Analyse")
-st.sidebar.markdown("**Version:** 1.8 – Datenlogging + Dashboards**")
 
 # --- Athlete name (required for saving) ---
 athlete_name = st.text_input("Athletenname", placeholder="z. B. Lars Blum")
@@ -78,7 +85,6 @@ if st.button("Analyse starten 🚀"):
     ax.set_title("Leistungsprofil")
     st.pyplot(fig)
 
-    # --- Save result row to CSV in repo: data/athleten_daten.csv ---
     save_row = {
         "Datum": str(date.today()),
         "Name": athlete_name,
