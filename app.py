@@ -8,25 +8,25 @@ from datetime import date
 from calculations.critical_power import calc_critical_power
 from calculations.vo2max import calc_vo2max
 from calculations.vlamax import calc_vlamax
+from calculations.vlamax_kona_calibrated import calc_vlamax_kona_calibrated
 from calculations.fatmax import calc_fatmax
 from calculations.zones import calc_zones, calc_ga1_zone
 from utils.athlete_type import determine_athlete_type
 
 st.set_page_config(page_title="360 Coaching Lab – Performance Analyzer", page_icon="🚴", layout="wide")
 
-# Sidebar navigation
+# Sidebar
 st.sidebar.markdown("### 🧬 360 Coaching Lab")
 st.sidebar.markdown("---")
 st.sidebar.page_link("app.py", label="🚴 Performance Analyzer")
 st.sidebar.page_link("pages/Dashboards.py", label="📊 Dashboards")
 st.sidebar.page_link("pages/Analyse_Overview.py", label="📈 Analyse-Übersicht")
 st.sidebar.markdown("---")
-st.sidebar.markdown("**Version:** 1.9.3**")
+st.sidebar.markdown("**Version:** 1.9.4**")
 
 st.title("🚴 360 Coaching Lab – Performance Analyzer")
 st.markdown("#### Leistungsdiagnostik & physiologische Analyse")
 
-# Athlete name input
 athlete_name = st.text_input("Athletenname", placeholder="Name eingeben")
 
 st.header("📥 Eingabe der Testdaten")
@@ -52,19 +52,26 @@ if st.button("Analyse starten 🚀"):
     ftp, w_prime = calc_critical_power(p5min, p12min, peak20)
     vo2_abs, vo2_rel = calc_vo2max(p5min, weight, gender)
     ffm = weight * (1 - bodyfat / 100)
-    vlamax = calc_vlamax(ffm=ffm, avg20=avg20, peak20=peak20, sprint_dur_s=sprint_dur, gender=gender)
+
+    try:
+        vlamax = calc_vlamax_kona_calibrated(ffm, avg20, peak20, sprint_dur, vo2_rel, p5min, p12min, gender)
+        model_used = "Kona-Calibrated"
+    except Exception:
+        vlamax = calc_vlamax(ffm, avg20, peak20, sprint_dur, gender)
+        model_used = "Classic-Fallback"
+
     fatmax_w, fatmax_pct_ftp, zone_label = calc_fatmax(vo2_rel, vlamax, ftp)
     zones = calc_zones(ftp, hfmax, fatmax_w, vlamax)
     ga1_min, ga1_max, ga1_pct_min, ga1_pct_max = calc_ga1_zone(fatmax_w, ftp, vlamax)
     athlete_type = determine_athlete_type(vo2_rel, vlamax, ftp, weight)
 
-    # Übersichtliche Hauptmetriken oben
+    # Metrics
     st.subheader("🔢 Leistungskennzahlen")
-    mcol1, mcol2, mcol3, mcol4 = st.columns(4)
-    mcol1.metric("FTP / CP", f"{ftp:.0f} W")
-    mcol2.metric("VO₂max rel.", f"{vo2_rel:.1f} ml/min/kg")
-    mcol3.metric("FatMax", f"{fatmax_w:.0f} W")
-    mcol4.metric("VLaMax", f"{vlamax:.3f} mmol/l/s")
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("FTP / CP", f"{ftp:.0f} W")
+    m2.metric("VO₂max rel.", f"{vo2_rel:.1f} ml/min/kg")
+    m3.metric("FatMax", f"{fatmax_w:.0f} W")
+    m4.metric(f"VLaMax ({model_used})", f"{vlamax:.3f} mmol/l/s")
 
     st.subheader("📊 Ergebnisse")
     df = pd.DataFrame({
@@ -75,7 +82,7 @@ if st.button("Analyse starten 🚀"):
         ],
         "Wert": [
             str(date.today()), athlete_name, ftp, w_prime, round(vo2_abs,2), round(vo2_rel,1),
-            round(vlamax,3), f"**{round(fatmax_w,1)}**", f"**{round(fatmax_pct_ftp,1)} %**",
+            round(vlamax,3), f"{round(fatmax_w,1)}", f"{round(fatmax_pct_ftp,1)} %",
             f"{int(ga1_min)}–{int(ga1_max)}", f"{round(ga1_pct_min,1)}–{round(ga1_pct_max,1)} %", athlete_type
         ]
     })
@@ -95,7 +102,7 @@ if st.button("Analyse starten 🚀"):
     ax.set_title("Leistungsprofil")
     st.pyplot(fig)
 
-    # Save to CSV
+    # Save data
     save_row = {
         "Datum": str(date.today()),
         "Name": athlete_name,

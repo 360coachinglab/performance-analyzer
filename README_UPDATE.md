@@ -1,16 +1,14 @@
 
-# Performance Analyzer v1.9.3 Update
+# Performance Analyzer v1.9.4 Update
 
 ## Änderungen
-- Neue **VLamax-Regression (präziser, datenbasiert)** ersetzt das alte empirische Modell
-- FFM, ØWatt, PeakWatt, Sprintdauer & Geschlecht berücksichtigt
-- VLamax jetzt zusätzlich **oben als Haupt-Metrik** angezeigt
-- Version in Sidebar auf 1.9.3 aktualisiert
+- Automatische Auswahl zwischen **Kona-Calibrated** und **Classic** VLamax-Modell
+- Neue Version in Sidebar (1.9.4)
+- Präzisere VLamax-Schätzung mit deinem kalibrierten Modell (R² = 0.97)
+- Fallback bleibt Classic, falls Kona-Modell-Eingaben fehlen
 
-## Installation
-1. Alte `calculations/vlamax.py` und `app.py` durch diese Dateien ersetzen.
-2. App starten:
-   ```bash
-   streamlit run app.py
-   ```
-3. Fertig ✅
+## Nutzung
+Einfach alte `app.py` und `calculations/vlamax*.py` ersetzen, dann starten:
+```bash
+streamlit run app.py
+```
