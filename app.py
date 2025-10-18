@@ -21,7 +21,7 @@ st.sidebar.page_link("app.py", label="🚴 Performance Analyzer")
 st.sidebar.page_link("pages/Dashboards.py", label="📊 Dashboards")
 st.sidebar.page_link("pages/Analyse_Overview.py", label="📈 Analyse-Übersicht")
 st.sidebar.markdown("---")
-st.sidebar.markdown("**Version:** 1.9.2**")
+st.sidebar.markdown("**Version:** 1.9.3**")
 
 st.title("🚴 360 Coaching Lab – Performance Analyzer")
 st.markdown("#### Leistungsdiagnostik & physiologische Analyse")
@@ -57,6 +57,14 @@ if st.button("Analyse starten 🚀"):
     zones = calc_zones(ftp, hfmax, fatmax_w, vlamax)
     ga1_min, ga1_max, ga1_pct_min, ga1_pct_max = calc_ga1_zone(fatmax_w, ftp, vlamax)
     athlete_type = determine_athlete_type(vo2_rel, vlamax, ftp, weight)
+
+    # Übersichtliche Hauptmetriken oben
+    st.subheader("🔢 Leistungskennzahlen")
+    mcol1, mcol2, mcol3, mcol4 = st.columns(4)
+    mcol1.metric("FTP / CP", f"{ftp:.0f} W")
+    mcol2.metric("VO₂max rel.", f"{vo2_rel:.1f} ml/min/kg")
+    mcol3.metric("FatMax", f"{fatmax_w:.0f} W")
+    mcol4.metric("VLaMax", f"{vlamax:.3f} mmol/l/s")
 
     st.subheader("📊 Ergebnisse")
     df = pd.DataFrame({
