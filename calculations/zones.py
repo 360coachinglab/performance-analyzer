@@ -1,31 +1,29 @@
+
+# calculations/zones.py
 import pandas as pd
 
-def calc_zones(ftp, hfmax, fatmax, vlamax):
-    z1_upper = 0.75 * fatmax
-    z2_upper = 1.05 * fatmax
-    z3_upper = (1.35 - 0.3 * vlamax) * fatmax
-    z4_lower = max(z2_upper, z3_upper)
-    z4_upper = 1.05 * ftp
-    if z4_lower >= z4_upper:
-        z4_lower = 0.98 * ftp
-        z3_upper = min(z3_upper, 0.97 * ftp)
+def calc_zones(cp, hfmax, fatmax_w, vlamax):
+    ga1_base = (0.55, 0.70)
+    ga2_base = (0.70, 0.90)
+    v = max(0.2, min(float(vlamax), 1.0))
+    scale = (0.6 - v) / 0.4
+    shift = 0.10 * scale
+    def shift_band(band):
+        lo, hi = band
+        return (lo*(1+shift), hi*(1+shift))
+    ga1_pct = shift_band(ga1_base)
+    ga2_pct = shift_band(ga2_base)
+    ga1_w = (ga1_pct[0]*cp, ga1_pct[1]*cp)
+    ga2_w = (ga2_pct[0]*cp, ga2_pct[1]*cp)
     zones = [
-        ("Z1 - Regeneration", 0, z1_upper, "Sehr locker, aktive Erholung"),
-        ("Z2 - GA1 (Fettstoffwechsel)", z1_upper, z2_upper, "Fettoxidation dominant"),
-        ("Z3 - GA2 (Übergang)", z2_upper, z3_upper, "Mischstoffwechsel"),
-        ("Z4 - Schwelle", z3_upper, z4_upper, "MLSS / FTP bis 105%"),
-        ("Z5 - VO2max", z4_upper, 1.25 * ftp, "Intensive Reize"),
+        {"Zone": "GA1", "Leistung (W)": f"{ga1_w[0]:.0f}–{ga1_w[1]:.0f}", "Prozent CP": f"{ga1_pct[0]*100:.1f}%–{ga1_pct[1]*100:.1f}%"},
+        {"Zone": "GA2", "Leistung (W)": f"{ga2_w[0]:.0f}–{ga2_w[1]:.0f}", "Prozent CP": f"{ga2_pct[0]*100:.1f}%–{ga2_pct[1]*100:.1f}%"}
     ]
-    df = pd.DataFrame(zones, columns=["Zone", "von (W)", "bis (W)", "Beschreibung"])
-    df["von (W)"] = df["von (W)"].round(0)
-    df["bis (W)"] = df["bis (W)"].round(0)
-    return df
+    return pd.DataFrame(zones)
 
-def calc_ga1_zone(fatmax, ftp, vlamax):
-    ga1_min = fatmax * (0.85 + 0.10 * vlamax)
-    ga1_max = fatmax * (1.10 - 0.20 * vlamax)
-    ga1_min = round(ga1_min, 1)
-    ga1_max = round(ga1_max, 1)
-    ga1_pct_min = round(ga1_min / ftp * 100, 1)
-    ga1_pct_max = round(ga1_max / ftp * 100, 1)
-    return ga1_min, ga1_max, ga1_pct_min, ga1_pct_max
+def calc_ga1_zone(fatmax_w, cp, vlamax):
+    v = max(0.2, min(float(vlamax), 1.0))
+    scale = (0.6 - v) / 0.4
+    shift = 0.10 * scale
+    lo_pct, hi_pct = 0.55*(1+shift), 0.70*(1+shift)
+    return lo_pct*cp, hi_pct*cp, lo_pct*100, hi_pct*100

@@ -1,4 +1,5 @@
 
+# calculations/vlamax_exact.py
 import os
 import pandas as pd
 import numpy as np
@@ -9,13 +10,11 @@ CSV_PATH = "vlamax_testdaten.csv"
 MODEL_PATH = "vlamax_model.joblib"
 
 def _train_or_load_model():
-    # 1) Try load
     if os.path.exists(MODEL_PATH):
         try:
             return joblib.load(MODEL_PATH)
         except Exception:
             pass
-    # 2) Train
     if os.path.exists(CSV_PATH):
         daten = pd.read_csv(CSV_PATH)
         if len(daten) >= 2:
@@ -29,14 +28,9 @@ def _train_or_load_model():
             except Exception:
                 pass
             return model
-    # 3) None
     return None
 
-def calc_vlamax_exact_with_ffm(ffm_kg: float,
-                               avg20_w: float,
-                               peak20_w: float,
-                               sprint_s: float,
-                               gender: str) -> float:
+def calc_vlamax_exact_with_ffm(ffm_kg: float, avg20_w: float, peak20_w: float, sprint_s: float, gender: str) -> float:
     model = _train_or_load_model()
     if model is None:
         raise RuntimeError("Kein VLamax-Modell verfügbar (CSV/Joblib fehlt).")
