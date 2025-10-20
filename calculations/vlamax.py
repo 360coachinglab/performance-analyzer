@@ -1,10 +1,8 @@
 
 def calc_vlamax(ffm, avg20, peak20, sprint_dur_s, gender):
-    """Empirisches VLamax-Modell (Classic, v1.9.2)
-    Formel:
-        VLamax = -0.33217 + 0.05238 * (Avg20/FFM) + 0.01295 * Sprintdauer
-    Frauenkorrektur: -0.01
-    Wertebereich: [0.20, 0.90]
+    """Classic VLamax (v1.9.2) als Fallback.
+    VLamax = -0.33217 + 0.05238 * (Avg20/FFM) + 0.01295 * Sprintdauer
+    Frauenkorrektur: -0.01; Clipping [0.20, 0.90]
     """
     ffm = max(float(ffm), 1e-6)
     avg_ffm = float(avg20) / ffm
