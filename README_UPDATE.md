@@ -1,19 +1,19 @@
 
-# Performance Analyzer v1.9.6 – VO2max Formel B
+# Performance Analyzer v1.9.6 – Komplett-Update
 
-Diese Version nutzt standardmäßig die realistische **Formel B**:
+## Enthalten
+- `app.py` – Haupt-App, Version 1.9.6
+- `calculations/vo2max.py` – VO2max **Formel B** (7 + 10.8 × P5/kg), Formel A optional
+- `calculations/vlamax_exact.py` – **Exact-App** VLamax (LinearRegression, CSV/Joblib)
+- `calculations/vlamax.py` – Classic-Fallback
 
-    VO₂rel [ml/min/kg] = 7 + 10.8 × (P5 / kg)
-    VO₂abs [l/min]     = (VO₂rel × kg) / 1000
+## Voraussetzungen
+- `vlamax_testdaten.csv` im Projekt-Root (für Exact-App VLamax)
+- Python-Pakete:
+  - streamlit, pandas, numpy, scikit-learn, joblib, matplotlib, tabulate
 
-Formel A bleibt optional im Code enthalten:
-
-    VO₂rel [ml/min/kg] = 16.6 + 8.87 × (P5 / kg)
-
-### Nutzung
-Keine Anpassung im UI nötig – die App verwendet automatisch Formel B als Standard.
-Wenn du Formel A nutzen möchtest, kannst du im Aufruf manuell setzen:
-
-```python
-vo2_abs, vo2_rel = calc_vo2max(p5min_w, weight, method="A")
+## Start
+```bash
+pip install -r requirements.txt
+streamlit run app.py
 ```

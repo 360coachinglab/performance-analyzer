@@ -7,8 +7,8 @@ from datetime import date
 
 from calculations.critical_power import calc_critical_power
 from calculations.vo2max import calc_vo2max
+from calculations.vlamax_exact import calc_vlamax_exact_with_ffm  # Exact-App Modell
 from calculations.vlamax import calc_vlamax as calc_vlamax_classic
-from calculations.vlamax_exact import calc_vlamax_exact_with_ffm  # exact app model via CSV/Joblib
 from calculations.fatmax import calc_fatmax
 from calculations.zones import calc_zones, calc_ga1_zone
 from utils.athlete_type import determine_athlete_type
@@ -22,7 +22,7 @@ st.sidebar.page_link("app.py", label="🚴 Performance Analyzer")
 st.sidebar.page_link("pages/Dashboards.py", label="📊 Dashboards")
 st.sidebar.page_link("pages/Analyse_Overview.py", label="📈 Analyse-Übersicht")
 st.sidebar.markdown("---")
-st.sidebar.markdown("**Version:** 1.9.5 (Exact VLamax)**")
+st.sidebar.markdown("**Version:** 1.9.6**")
 
 st.title("🚴 360 Coaching Lab – Performance Analyzer")
 st.markdown("#### Leistungsdiagnostik & physiologische Analyse")
@@ -33,8 +33,8 @@ st.header("📥 Eingabe der Testdaten")
 col1, col2, col3 = st.columns(3)
 with col1:
     gender = st.selectbox("Geschlecht", ["Mann", "Frau"])
-    weight = st.number_input("Körpergewicht (kg)", 40.0, 120.0, 70.0)
-    bodyfat = st.number_input("Körperfett (%)", 3.0, 40.0, 15.0)
+    weight = st.number_input("Körpergewicht (kg)", 40.0, 140.0, 70.0)
+    bodyfat = st.number_input("Körperfett (%)", 3.0, 40.0, 15.0, step=0.1)
 with col2:
     hfmax = st.number_input("HFmax", 100, 220, 190)
     p5min = st.number_input("Power 5min (W)", 100, 800, 350)
@@ -49,17 +49,16 @@ if st.button("Analyse starten 🚀"):
         st.warning("Bitte **Athletenname** eingeben, damit der Test gespeichert werden kann.")
         st.stop()
 
+    # Kernberechnungen
     ftp, w_prime = calc_critical_power(p5min, p12min, peak20)
-    vo2_abs, vo2_rel = calc_vo2max(p5min, weight, gender)
+    vo2_abs, vo2_rel = calc_vo2max(p5min, weight, gender, method="B")  # Formel B: 7 + 10.8*(P5/kg)
     ffm = weight * (1 - bodyfat / 100)
 
-    # 1) Exact-App-Modell mit FFM/Avg/Peak/Sprint/Geschlecht
+    # Exact-App VLamax, Fallback auf Classic
     try:
         vlamax = calc_vlamax_exact_with_ffm(ffm, avg20, peak20, sprint_dur, gender)
         model_used = "Exact-App"
     except Exception:
-        # 2) Fallback auf Classic
-        from calculations.vlamax import calc_vlamax as calc_vlamax_classic
         vlamax = calc_vlamax_classic(ffm, avg20, peak20, sprint_dur, gender)
         model_used = "Classic-Fallback"
 
@@ -68,13 +67,16 @@ if st.button("Analyse starten 🚀"):
     ga1_min, ga1_max, ga1_pct_min, ga1_pct_max = calc_ga1_zone(fatmax_w, ftp, vlamax)
     athlete_type = determine_athlete_type(vo2_rel, vlamax, ftp, weight)
 
+    # Metrics
     st.subheader("🔢 Leistungskennzahlen")
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("FTP / CP", f"{ftp:.0f} W")
     m2.metric("VO₂max rel.", f"{vo2_rel:.1f} ml/min/kg")
     m3.metric("FatMax", f"{fatmax_w:.0f} W")
     m4.metric(f"VLaMax ({model_used})", f"{vlamax:.3f} mmol/l/s")
+    st.caption("VO₂ berechnet nach Formel B: 7 + 10.8 × (P5/kg)")
 
+    # Ergebnisse Tabelle
     st.subheader("📊 Ergebnisse")
     df = pd.DataFrame({
         "Parameter": [
@@ -91,23 +93,21 @@ if st.button("Analyse starten 🚀"):
     from tabulate import tabulate
     st.markdown(tabulate(df, headers='keys', tablefmt='github', showindex=False))
 
+    # Zonen & Plot
     st.subheader("🏁 Trainingszonen (metabolisch)")
     st.dataframe(zones)
 
     st.subheader("📈 Beispielhafte Powerkurve")
     durations = [20, 60, 300, 720]
     powers = [peak20, (peak20+p5min)/2, p5min, p12min]
-    import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
-    ax.plot(durations, powers, marker="o", color="#3CB371")
+    ax.plot(durations, powers, marker="o")
     ax.set_xlabel("Dauer (s)")
     ax.set_ylabel("Leistung (W)")
     ax.set_title("Leistungsprofil")
     st.pyplot(fig)
 
-    # Save data
-    from pathlib import Path
-    from datetime import date
+    # Save CSV
     save_row = {
         "Datum": str(date.today()),
         "Name": athlete_name,
@@ -124,7 +124,6 @@ if st.button("Analyse starten 🚀"):
     data_dir = Path("data"); data_dir.mkdir(exist_ok=True)
     csv_path = data_dir / "athleten_daten.csv"
     try:
-        import pandas as pd
         if csv_path.exists():
             old = pd.read_csv(csv_path)
             new = pd.concat([old, pd.DataFrame([save_row])], ignore_index=True)
