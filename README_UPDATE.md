@@ -1,19 +1,15 @@
 
-# Performance Analyzer v1.9.6 – Komplett-Update
+# Performance Analyzer v1.9.7 – Critical Power Upgrade
 
-## Enthalten
-- `app.py` – Haupt-App, Version 1.9.6
-- `calculations/vo2max.py` – VO2max **Formel B** (7 + 10.8 × P5/kg), Formel A optional
-- `calculations/vlamax_exact.py` – **Exact-App** VLamax (LinearRegression, CSV/Joblib)
-- `calculations/vlamax.py` – Classic-Fallback
+## Neu
+- Präzisere CP/W′-Berechnung per Monod–Scherrer: P = CP + W'/t
+- Unterstützt optional 1‑ und 3‑Minuten-Leistung (werden nur verwendet, wenn eingegeben)
+- UI: Neue Felder „Power 1min“ und „Power 3min“
 
-## Voraussetzungen
-- `vlamax_testdaten.csv` im Projekt-Root (für Exact-App VLamax)
-- Python-Pakete:
-  - streamlit, pandas, numpy, scikit-learn, joblib, matplotlib, tabulate
-
-## Start
-```bash
-pip install -r requirements.txt
-streamlit run app.py
-```
+## Einbau
+1) Ersetze `calculations/critical_power.py` und (falls gewünscht) `app.py`.
+2) Starte:
+   ```bash
+   streamlit run app.py
+   ```
+3) Gib 1‑ und 3‑Minuten‑Werte ein, wenn vorhanden – die Berechnung nutzt automatisch alle verfügbaren Punkte.

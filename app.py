@@ -7,7 +7,7 @@ from datetime import date
 
 from calculations.critical_power import calc_critical_power
 from calculations.vo2max import calc_vo2max
-from calculations.vlamax_exact import calc_vlamax_exact_with_ffm  # Exact-App Modell
+from calculations.vlamax_exact import calc_vlamax_exact_with_ffm
 from calculations.vlamax import calc_vlamax as calc_vlamax_classic
 from calculations.fatmax import calc_fatmax
 from calculations.zones import calc_zones, calc_ga1_zone
@@ -15,14 +15,9 @@ from utils.athlete_type import determine_athlete_type
 
 st.set_page_config(page_title="360 Coaching Lab – Performance Analyzer", page_icon="🚴", layout="wide")
 
-# Sidebar
 st.sidebar.markdown("### 🧬 360 Coaching Lab")
 st.sidebar.markdown("---")
-st.sidebar.page_link("app.py", label="🚴 Performance Analyzer")
-st.sidebar.page_link("pages/Dashboards.py", label="📊 Dashboards")
-st.sidebar.page_link("pages/Analyse_Overview.py", label="📈 Analyse-Übersicht")
-st.sidebar.markdown("---")
-st.sidebar.markdown("**Version:** 1.9.6**")
+st.sidebar.markdown("**Version:** 1.9.7 (Critical Power Upgrade)**")
 
 st.title("🚴 360 Coaching Lab – Performance Analyzer")
 st.markdown("#### Leistungsdiagnostik & physiologische Analyse")
@@ -37,24 +32,35 @@ with col1:
     bodyfat = st.number_input("Körperfett (%)", 3.0, 40.0, 15.0, step=0.1)
 with col2:
     hfmax = st.number_input("HFmax", 100, 220, 190)
-    p5min = st.number_input("Power 5min (W)", 100, 800, 350)
-    p12min = st.number_input("Power 12min (W)", 100, 700, 300)
+    p1min = st.number_input("Power 1min (W)", 0, 2000, 0, help="Optional – leer (0) falls unbekannt")
+    p3min = st.number_input("Power 3min (W)", 0, 2000, 0, help="Optional – leer (0) falls unbekannt")
+    p5min = st.number_input("Power 5min (W)", 100, 2000, 350)
+    p12min = st.number_input("Power 12min (W)", 100, 2000, 300)
 with col3:
     sprint_dur = st.number_input("Sprintdauer (s)", 10, 30, 20)
-    avg20 = st.number_input("20s Ø-Leistung (W)", 200, 1500, 650)
-    peak20 = st.number_input("20s Peak-Leistung (W)", 300, 1800, 900)
+    avg20 = st.number_input("20s Ø-Leistung (W)", 200, 2500, 650)
+    peak20 = st.number_input("20s Peak-Leistung (W)", 300, 3000, 900)
 
 if st.button("Analyse starten 🚀"):
     if not athlete_name.strip():
-        st.warning("Bitte **Athletenname** eingeben, damit der Test gespeichert werden kann.")
+        st.warning("Bitte **Athletenname** eingeben.")
         st.stop()
 
-    # Kernberechnungen
-    ftp, w_prime = calc_critical_power(p5min, p12min, peak20)
-    vo2_abs, vo2_rel = calc_vo2max(p5min, weight, gender, method="B")  # Formel B: 7 + 10.8*(P5/kg)
+    # Optional-Inputs als None behandeln, wenn 0
+    p1 = None if p1min == 0 else p1min
+    p3 = None if p3min == 0 else p3min
+
+    ftp, w_prime = calc_critical_power(
+        p20s=peak20,
+        p1min=p1,
+        p3min=p3,
+        p5min=p5min,
+        p12min=p12min
+    )
+
+    vo2_abs, vo2_rel = calc_vo2max(p5min, weight, gender, method="B")
     ffm = weight * (1 - bodyfat / 100)
 
-    # Exact-App VLamax, Fallback auf Classic
     try:
         vlamax = calc_vlamax_exact_with_ffm(ffm, avg20, peak20, sprint_dur, gender)
         model_used = "Exact-App"
@@ -67,16 +73,14 @@ if st.button("Analyse starten 🚀"):
     ga1_min, ga1_max, ga1_pct_min, ga1_pct_max = calc_ga1_zone(fatmax_w, ftp, vlamax)
     athlete_type = determine_athlete_type(vo2_rel, vlamax, ftp, weight)
 
-    # Metrics
     st.subheader("🔢 Leistungskennzahlen")
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("FTP / CP", f"{ftp:.0f} W")
-    m2.metric("VO₂max rel.", f"{vo2_rel:.1f} ml/min/kg")
-    m3.metric("FatMax", f"{fatmax_w:.0f} W")
+    m2.metric("W′", f"{w_prime:.0f} J")
+    m3.metric("VO₂max rel.", f"{vo2_rel:.1f} ml/min/kg")
     m4.metric(f"VLaMax ({model_used})", f"{vlamax:.3f} mmol/l/s")
     st.caption("VO₂ berechnet nach Formel B: 7 + 10.8 × (P5/kg)")
 
-    # Ergebnisse Tabelle
     st.subheader("📊 Ergebnisse")
     df = pd.DataFrame({
         "Parameter": [
@@ -93,21 +97,23 @@ if st.button("Analyse starten 🚀"):
     from tabulate import tabulate
     st.markdown(tabulate(df, headers='keys', tablefmt='github', showindex=False))
 
-    # Zonen & Plot
     st.subheader("🏁 Trainingszonen (metabolisch)")
     st.dataframe(zones)
 
     st.subheader("📈 Beispielhafte Powerkurve")
-    durations = [20, 60, 300, 720]
-    powers = [peak20, (peak20+p5min)/2, p5min, p12min]
+    durations = [20, 60, 180, 300, 720]
+    powers = [peak20, (p1 if p1 is not None else None), (p3 if p3 is not None else None), p5min, p12min]
+    # Filter None out for plotting
+    dpairs = [(d, p) for d, p in zip(durations, powers) if p is not None]
+    d_plot = [d for d, _ in dpairs]
+    p_plot = [p for _, p in dpairs]
     fig, ax = plt.subplots()
-    ax.plot(durations, powers, marker="o")
+    ax.plot(d_plot, p_plot, marker="o")
     ax.set_xlabel("Dauer (s)")
     ax.set_ylabel("Leistung (W)")
     ax.set_title("Leistungsprofil")
     st.pyplot(fig)
 
-    # Save CSV
     save_row = {
         "Datum": str(date.today()),
         "Name": athlete_name,
@@ -117,6 +123,7 @@ if st.button("Analyse starten 🚀"):
         "VO2max rel (ml/min/kg)": round(vo2_rel,1),
         "VO2max abs (l/min)": round(vo2_abs,2),
         "FTP (W)": ftp,
+        "W' (J)": w_prime,
         "VLamax (mmol/l/s)": round(vlamax,3),
         "FatMax (W)": round(fatmax_w,1),
         "Athletentyp": athlete_type,
