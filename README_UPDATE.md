@@ -1,15 +1,17 @@
 
-# Performance Analyzer v1.9.7 – Critical Power Upgrade
+# Performance Analyzer v1.9.8 – Dashboard Edition
 
-## Neu
-- Präzisere CP/W′-Berechnung per Monod–Scherrer: P = CP + W'/t
-- Unterstützt optional 1‑ und 3‑Minuten-Leistung (werden nur verwendet, wenn eingegeben)
-- UI: Neue Felder „Power 1min“ und „Power 3min“
+## Features
+- Critical Power (20s, 1min, 3min, 5min, 12min) – Monod–Scherrer
+- GA-Zonen dynamisch: abhängig von CP und VLamax
+- Dashboard-Visuals: VLamax-Gauge, VO₂max-Gauge, FatMax in Zonen
+- VO₂max (Formel B: 7 + 10.8 × P5/kg)
+- Exaktes VLamax-Modell (CSV/Joblib aus deiner vlamax-App)
 
-## Einbau
-1) Ersetze `calculations/critical_power.py` und (falls gewünscht) `app.py`.
-2) Starte:
-   ```bash
-   streamlit run app.py
-   ```
-3) Gib 1‑ und 3‑Minuten‑Werte ein, wenn vorhanden – die Berechnung nutzt automatisch alle verfügbaren Punkte.
+## Installation
+1. Dateien ins Projekt kopieren.
+2. Abhängigkeiten installieren (siehe requirements.txt).
+3. Starten mit `streamlit run app.py`.
+
+## Hinweise
+- `vlamax_testdaten.csv` im Projekt-Root benötigt, damit das VLamax-Modell trainiert/geladen werden kann.
