@@ -13,11 +13,11 @@ from calculations.vlamax import calc_vlamax as calc_vlamax_classic
 from calculations.fatmax import calc_fatmax
 from calculations.zones import calc_zones, calc_ga1_zone
 from utils.athlete_type import determine_athlete_type
-from pdf_export import create_analysis_pdf
+from pdf_export import create_analysis_pdf, create_analysis_pdf_bytes
 
 st.set_page_config(page_title="Performance Analyzer", page_icon="🚴", layout="wide")
 
-st.sidebar.markdown("**Version:** 1.9.9b (Neutral • Dynamic Zones + PDF)")
+st.sidebar.markdown("**Version:** 1.9.9c (Neutral • Dynamic Zones + PDF in-memory)**")
 
 st.title("Performance Analyzer")
 st.markdown("#### Leistungsdiagnostik & physiologische Analyse")
@@ -50,7 +50,7 @@ if st.button("Analyse starten 🚀"):
     p3 = None if p3min == 0 else p3min
 
     cp, w_prime = calc_critical_power(p20s=peak20, p1min=p1, p3min=p3, p5min=p5min, p12min=p12min)
-    vo2_abs, vo2_rel = calc_vo2max(p5min, weight, gender, method="B")  # 7 + 10.8*(P5/kg)
+    vo2_abs, vo2_rel = calc_vo2max(p5min, weight, gender, method="B")
     ffm = weight * (1 - bodyfat / 100)
 
     try:
@@ -142,16 +142,30 @@ if st.button("Analyse starten 🚀"):
     st.pyplot(fig)
 
     st.subheader("📄 Export")
-    export_dir = Path("exports")
-    export_dir.mkdir(exist_ok=True)
-    pdf_path = export_dir / f"{athlete_name or 'analyse'}_{date.today().isoformat()}.pdf"
     if st.button("PDF exportieren"):
-        create_analysis_pdf(
-            pdf_path, athlete_name, vo2_rel, vlamax, cp, w_prime, fatmax_w,
-            (ga1_min, ga1_max), (ga1_max, 0.90*cp),
-            pts=pts
-        )
-        st.success(f"PDF exportiert: {pdf_path}")
-    if pdf_path.exists():
-        with open(pdf_path, "rb") as f:
-            st.download_button("📄 PDF herunterladen", data=f, file_name=pdf_path.name, mime="application/pdf")
+        try:
+            pdf_bytes = create_analysis_pdf_bytes(
+                athlete_name, vo2_rel, vlamax, cp, w_prime, fatmax_w,
+                (ga1_min, ga1_max), (ga1_max, 0.90*cp), pts=pts
+            )
+            st.success("PDF erstellt (Speicher).")
+            st.download_button(
+                "📄 PDF herunterladen",
+                data=pdf_bytes,
+                file_name=f"{athlete_name or 'analyse'}_{date.today().isoformat()}.pdf",
+                mime="application/pdf"
+            )
+        except Exception as e:
+            st.warning(f"In-Memory PDF fehlgeschlagen: {e}. Versuche Dateispeicherung …")
+            export_dir = Path("exports"); export_dir.mkdir(exist_ok=True)
+            pdf_path = export_dir / f"{athlete_name or 'analyse'}_{date.today().isoformat()}.pdf"
+            try:
+                create_analysis_pdf(
+                    pdf_path, athlete_name, vo2_rel, vlamax, cp, w_prime, fatmax_w,
+                    (ga1_min, ga1_max), (ga1_max, 0.90*cp), pts=pts
+                )
+                st.success(f"PDF exportiert: {pdf_path}")
+                with open(pdf_path, "rb") as f:
+                    st.download_button("📄 PDF herunterladen", data=f.read(), file_name=pdf_path.name, mime="application/pdf")
+            except Exception as e2:
+                st.error(f"PDF-Erstellung fehlgeschlagen: {e2}")

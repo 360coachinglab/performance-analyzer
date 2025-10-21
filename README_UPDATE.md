@@ -1,9 +1,9 @@
 
-# Performance Analyzer v1.9.9b — Neutral • Dynamic Zones + PDF
+# Performance Analyzer v1.9.9c — Neutral • Dynamic Zones + PDF (in-memory first)
 
 ## Neu
-- Dynamische Zonen (GA1–R) abhängig von **CP + VLamax (+ FatMax)**
-- Neutraler PDF-Export (lokale Speicherung + Download-Button)
+- PDF-Export **im Speicher** (keine Dateirechte nötig). Fallback auf Dateisystem `exports/`.
+- Dynamische Zonen (GA1–R) abhängig von **CP + VLamax (+ FatMax)**.
 
 ## Installation
 1. Dateien in Projekt kopieren:
@@ -16,8 +16,3 @@
    pip install -r requirements.txt
 4. Start:
    streamlit run app.py
-
-## Nutzung
-- Nach der Analyse → **PDF exportieren** klicken  
-- Datei wird unter `exports/<Athletenname>_<YYYY-MM-DD>.pdf` gespeichert  
-- Direkt danach erscheint der **Download-Button**

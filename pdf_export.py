@@ -5,6 +5,7 @@ from reportlab.lib.units import cm
 from reportlab.lib import colors
 import tempfile
 import matplotlib.pyplot as plt
+from io import BytesIO
 
 def _plot_vlamax_gauge(vlamax, path):
     fig, ax = plt.subplots(figsize=(4, 1.2))
@@ -53,8 +54,7 @@ def _plot_cp_curve(cp, w_prime, pts, path):
     fig.savefig(path, dpi=150)
     plt.close(fig)
 
-def create_analysis_pdf(output_path, athlete_name, vo2_rel, vlamax, cp, w_prime, fatmax_w, ga1_range, ga2_range, pts=None):
-    c = canvas.Canvas(str(output_path), pagesize=A4)
+def _render_pdf(c, athlete_name, vo2_rel, vlamax, cp, w_prime, fatmax_w, ga1_range, ga2_range, pts):
     width, height = A4
     margin = 2*cm
     y = height - margin
@@ -75,11 +75,11 @@ def create_analysis_pdf(output_path, athlete_name, vo2_rel, vlamax, cp, w_prime,
     y -= 0.8*cm
 
     lines = [
-        ("VO₂max rel.", f"{vo2_rel:.1f} ml/min/kg", "Aerobe Kapazität; höher = mehr Ausdauerleistung."),
-        ("VLamax", f"{vlamax:.3f} mmol/l/s", "Glykolytisches Potenzial; hoch = sprint-/anaerob-stark, niedrig = ausdauerstark."),
-        ("Critical Power (CP)", f"{cp:.0f} W", "Dauerleistungsgrenze (Monod–Scherrer)."),
-        ("W′", f"{w_prime:.0f} J", "Anaerobe Kapazität; Energiemenge oberhalb CP."),
-        ("FatMax", f"{fatmax_w:.0f} W", "Leistung mit maximalem Fettstoffwechsel (typ. in GA1)."),
+        ("VO₂max rel.", f"{vo2_rel:.1f} ml/min/kg", "Aerobe Kapazität."),
+        ("VLamax", f"{vlamax:.3f} mmol/l/s", "Glykolytisches Potenzial."),
+        ("Critical Power (CP)", f"{cp:.0f} W", "Dauerleistungsgrenze."),
+        ("W′", f"{w_prime:.0f} J", "Anaerobe Kapazität oberhalb CP."),
+        ("FatMax", f"{fatmax_w:.0f} W", "Leistung mit max. Fettstoffwechsel."),
     ]
     c.setFont("Helvetica-Bold", 11); c.drawString(margin, y, "Kennzahlen – Überblick"); y -= 0.5*cm
     c.setFont("Helvetica", 10)
@@ -119,3 +119,15 @@ def create_analysis_pdf(output_path, athlete_name, vo2_rel, vlamax, cp, w_prime,
     c.setFont("Helvetica", 9)
     c.drawRightString(width - margin, 1.5*cm, "©")
     c.save()
+
+def create_analysis_pdf(output_path, athlete_name, vo2_rel, vlamax, cp, w_prime, fatmax_w, ga1_range, ga2_range, pts=None):
+    c = canvas.Canvas(str(output_path), pagesize=A4)
+    _render_pdf(c, athlete_name, vo2_rel, vlamax, cp, w_prime, fatmax_w, ga1_range, ga2_range, pts or [])
+
+def create_analysis_pdf_bytes(athlete_name, vo2_rel, vlamax, cp, w_prime, fatmax_w, ga1_range, ga2_range, pts=None):
+    buf = BytesIO()
+    c = canvas.Canvas(buf, pagesize=A4)
+    _render_pdf(c, athlete_name, vo2_rel, vlamax, cp, w_prime, fatmax_w, ga1_range, ga2_range, pts or [])
+    pdf = buf.getvalue()
+    buf.close()
+    return pdf
