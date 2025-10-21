@@ -139,7 +139,7 @@ if "results" in st.session_state:
             "Empf. GA1-Zone (W)", "Empf. GA1-Zone (%CP)", "Athletentyp"
         ],
         "Wert": [
-            str(date.today()), athlete_name_val, str(r["birth_date"]), weight, bodyfat, round(r['cp']), round(r['w_prime']), round(r['ftp_corr']), r['ftp_corr']/r['weight']:.2f, round(r['vo2_abs'],2), round(r['vo2_rel'],1),
+            str(date.today()), athlete_name_val, str(r["birth_date"]), weight, bodyfat, round(r['cp']), round(r['w_prime']), round(r['ftp_corr']), f"{r['ftp_corr']/r['weight']:.2f}", round(r['vo2_abs'],2), round(r['vo2_rel'],1),
             round(r['vlamax'],3), f"{round(r['fatmax_w'],1)}", f"{round((r['fatmax_w']/r['cp'])*100,1)} %",
             f"{int(r['ga1_min'])}–{int(r['ga1_max'])}", f"{round(r['ga1_pct_min'],1)}–{round(r['ga1_pct_max'],1)} %", r['athlete_type']
         ]
