@@ -179,9 +179,9 @@ if "results" in st.session_state:
         lo, hi = 40, 80
         val = max(lo, min(hi, r['vo2_rel']))
         ax.barh([0], [val-lo], height=0.4)
-        ax.set_xlim(0, hi-lo); ax.set_yticks([])
+        ax.set_xlim(40, hi-lo); ax.set_yticks([])
         ax.set_xlabel("ml/min/kg (40–80)")
-        ax.text(val-lo, 40, f"{r['vo2_rel']:.1f}", va="center", ha="center")
+        ax.text(val-lo, 0, f"{r['vo2_rel']:.1f}", va="center", ha="center")
         st.pyplot(fig)
 
     st.markdown("**FatMax & Zonen (W)**")
