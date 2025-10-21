@@ -13,11 +13,11 @@ from calculations.vlamax import calc_vlamax as calc_vlamax_classic
 from calculations.fatmax import calc_fatmax
 from calculations.zones import calc_zones, calc_ga1_zone
 from utils.athlete_type import determine_athlete_type
-from pdf_export import create_analysis_pdf, create_analysis_pdf_bytes
+from pdf_export import create_analysis_pdf_bytes
 
 st.set_page_config(page_title="Performance Analyzer", page_icon="🚴", layout="wide")
 
-st.sidebar.markdown("**Version:** 1.9.9c (Neutral • Dynamic Zones + PDF in-memory)**")
+st.sidebar.markdown("**Version:** 1.9.9d (Neutral • Dynamic Zones + PDF in-memory)**")
 
 st.title("Performance Analyzer")
 st.markdown("#### Leistungsdiagnostik & physiologische Analyse")
@@ -148,7 +148,7 @@ if st.button("Analyse starten 🚀"):
                 athlete_name, vo2_rel, vlamax, cp, w_prime, fatmax_w,
                 (ga1_min, ga1_max), (ga1_max, 0.90*cp), pts=pts
             )
-            st.success("PDF erstellt (Speicher).")
+            st.success("PDF erstellt.")
             st.download_button(
                 "📄 PDF herunterladen",
                 data=pdf_bytes,
@@ -156,16 +156,4 @@ if st.button("Analyse starten 🚀"):
                 mime="application/pdf"
             )
         except Exception as e:
-            st.warning(f"In-Memory PDF fehlgeschlagen: {e}. Versuche Dateispeicherung …")
-            export_dir = Path("exports"); export_dir.mkdir(exist_ok=True)
-            pdf_path = export_dir / f"{athlete_name or 'analyse'}_{date.today().isoformat()}.pdf"
-            try:
-                create_analysis_pdf(
-                    pdf_path, athlete_name, vo2_rel, vlamax, cp, w_prime, fatmax_w,
-                    (ga1_min, ga1_max), (ga1_max, 0.90*cp), pts=pts
-                )
-                st.success(f"PDF exportiert: {pdf_path}")
-                with open(pdf_path, "rb") as f:
-                    st.download_button("📄 PDF herunterladen", data=f.read(), file_name=pdf_path.name, mime="application/pdf")
-            except Exception as e2:
-                st.error(f"PDF-Erstellung fehlgeschlagen: {e2}")
+            st.error(f"PDF-Erstellung fehlgeschlagen: {e}")
