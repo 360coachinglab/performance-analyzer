@@ -1,17 +1,17 @@
 
-# Performance Analyzer v1.9.8 – Dashboard Edition
+# Performance Analyzer v1.9.9 – PDF Export Edition (neutral)
 
-## Features
-- Critical Power (20s, 1min, 3min, 5min, 12min) – Monod–Scherrer
-- GA-Zonen dynamisch: abhängig von CP und VLamax
-- Dashboard-Visuals: VLamax-Gauge, VO₂max-Gauge, FatMax in Zonen
-- VO₂max (Formel B: 7 + 10.8 × P5/kg)
-- Exaktes VLamax-Modell (CSV/Joblib aus deiner vlamax-App)
+## Neu
+- PDF-Export in der App (weißes, neutrales Layout) inkl. Kennzahlen, Erklärtexte, Gauges (VO₂, VLamax), FatMax-in-Zonen, CP-Kurve.
 
-## Installation
-1. Dateien ins Projekt kopieren.
-2. Abhängigkeiten installieren (siehe requirements.txt).
-3. Starten mit `streamlit run app.py`.
+## Abhängigkeiten
+Bitte `requirements.txt` ergänzen:
+reportlab>=4.0.0
 
-## Hinweise
-- `vlamax_testdaten.csv` im Projekt-Root benötigt, damit das VLamax-Modell trainiert/geladen werden kann.
+(plus vorhanden: streamlit, pandas, numpy, matplotlib, scikit-learn, joblib, tabulate)
+
+## Nutzung
+1) Dateien ins Projekt legen.
+2) `pip install -r requirements.txt`
+3) In `app.py` importieren: `from pdf_export import create_analysis_pdf` (falls noch nicht vorhanden).
+4) App starten → Analyse durchführen → **PDF exportieren**.
