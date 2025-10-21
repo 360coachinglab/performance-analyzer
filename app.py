@@ -162,19 +162,21 @@ if "results" in st.session_state:
     # st.markdown(zones.to_markdown(index=False))
 
 
+st.subheader("🎯 Dashboard Visuals")
+c1, c2 = st.columns(2)
 
+with c1:
+    st.markdown("**VLamax**")
+    fig, ax = plt.subplots(figsize=(4,2))
+    ax.barh([0], [r['vlamax']], height=0.4)
+    ax.set_xlim(0,1)
+    ax.set_yticks([])
+    ax.set_xlabel("mmol/l/s")
+    ax.text(min(max(r['vlamax'],0),1), 0, f"{r['vlamax']:.2f}", va="center", ha="center")
+    st.pyplot(fig)
 
-    st.subheader("🎯 Dashboard Visuals")
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown("**VLamax**")
-        fig, ax = plt.subplots(figsize=(4,2))
-        ax.barh([0], [r['vlamax']], height=0.4)
-        ax.set_xlim(0,1); ax.set_yticks([]); ax.set_xlabel("mmol/l/s")
-        ax.text(min(max(r['vlamax'],0),1), 0, f"{r['vlamax']:.2f}", va="center", ha="center")
-        st.pyplot(fig)
-    with c2:
-        st.markdown("**VO₂max**")
+with c2:
+    st.markdown("**VO₂max**")
     fig, ax = plt.subplots(figsize=(4, 2))
 
     lo, hi = 45, 85  # gewünschte Achsengrenzen
