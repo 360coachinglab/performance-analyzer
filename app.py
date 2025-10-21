@@ -116,7 +116,6 @@ if "results" in st.session_state:
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("CP", f"{r['cp']:.0f} W")
     #m2.metric("W′", f"{r['w_prime']:.0f} J")
-    m2.metric("CP rel.′", f"{r['cp'/'weight']:.0f} W/kg")
     m3.metric("VO₂max rel.", f"{r['vo2_rel']:.1f} ml/min/kg")
     m4.metric(f"VLaMax ({r['model_used']})", f"{r['vlamax']:.3f} mmol/l/s")
     #st.caption("VO₂: Formel B = 7 + 10.8 × (P5/kg)")
