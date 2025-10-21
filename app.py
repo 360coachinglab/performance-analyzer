@@ -135,9 +135,22 @@ if "results" in st.session_state:
     })
     st.markdown(tabulate(df, headers='keys', tablefmt='github', showindex=False))
 
-    st.subheader("🏁 Trainingszonen (dynamisch: CP + VLamax + FatMax)")
-    st.dataframe(r['zones_df'], use_container_width=True)
-    st.markdown(r['zones_df'].to_markdown(index=False))
+#   st.subheader("🏁 Trainingszonen (dynamisch: CP + VLamax + FatMax)")
+#   st.dataframe(r['zones_df'], use_container_width=True)
+#   st.markdown(r['zones_df'].to_markdown(index=False))
+
+    # ---------- NEUER ZONEN-ABSCHNITT ----------
+    st.subheader("🏁 Trainingszonen (CP-basiert, VLamax + FatMax)")
+
+    # Berechnung (aus neuer zones.py)
+    zones = calc_zones(r['cp'], hfmax=None, fatmax_w=r['fatmax_w'], vlamax=r['vlamax'])
+
+    # Anzeige
+    st.dataframe(zones, use_container_width=True)
+    st.markdown(zones.to_markdown(index=False))
+
+
+
 
     st.subheader("🎯 Dashboard Visuals")
     c1, c2 = st.columns(2)
