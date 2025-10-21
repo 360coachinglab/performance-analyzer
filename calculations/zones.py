@@ -32,9 +32,9 @@ def calc_zones(cp, hfmax, fatmax_w, vlamax):
     zones = [
         ("Z1 - Regeneration", 0, z1_upper * cp, "Sehr locker, aktive Erholung"),
         ("Z2 - GA1 (Fettstoffwechsel)", z1_upper * cp, z2_upper * cp, "Fettoxidation dominant"),
-        ("Z3 - GA2 (Übergang)", z2_upper * cp, z3_upper * cp, "Mischstoffwechsel"),
-        ("Z4 - Schwelle", z3_upper * cp, z4_upper * cp, "MLSS / CP bis 105%"),
-        ("Z5 - VO2max", z4_upper * cp, 1.25 * cp, "Intensive Reize"),
+        ("Z3 - Tempo", z2_upper * cp, z3_upper * cp, "Mischstoffwechsel"),
+        ("Z4 - Schwelle", z3_upper * cp, z4_upper * cp, "MLSS / CP"),
+        ("Z5 - VO2max", z4_upper * cp, 1.30 * cp, "Intensive Reize"),
     ]
 
     df = pd.DataFrame(zones, columns=["Zone", "von [W]", "bis [W]", "Beschreibung"])
