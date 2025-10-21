@@ -28,7 +28,7 @@ def calc_zones(cp, hfmax, fatmax_w, vlamax):
         if fatmax_rel > z2_upper:
             z2_upper = min(0.85, fatmax_rel + 0.01)
 
-    # --- Zonen als Wattbereiche ---
+    # --- Zonen als Wattbereiche (weiterhin dynamisch durch VLamax & FatMax) ---
     zones = [
         ("Z1 - Regeneration", 0, z1_upper * cp, "Sehr locker, aktive Erholung"),
         ("Z2 - GA1 (Fettstoffwechsel)", z1_upper * cp, z2_upper * cp, "Fettoxidation dominant"),
@@ -40,8 +40,38 @@ def calc_zones(cp, hfmax, fatmax_w, vlamax):
     df = pd.DataFrame(zones, columns=["Zone", "von [W]", "bis [W]", "Beschreibung"])
     df["von [W]"] = df["von [W]"].round(0).astype(int)
     df["bis [W]"] = df["bis [W]"].round(0).astype(int)
+
+    # --- Prozentwerte (nur zur Anzeige, nicht fix für Berechnung) ---
+    df["% von CP"] = [
+        f"{round((row['von [W]']/cp)*100):.0f}–{round((row['bis [W]']/cp)*100):.0f} %"
+        for _, row in df.iterrows()
+    ]
+
+    # Spaltenreihenfolge für schöne Anzeige
+    df = df[["Zone", "von [W]", "bis [W]", "% von CP", "Beschreibung"]]
     return df
 
+    # --- Zonen als Wattbereiche ---
+    #zones = [
+    #    ("Z1 - Regeneration", 0, z1_upper * cp, "Sehr locker, aktive Erholung"),
+     #   ("Z2 - GA1 (Fettstoffwechsel)", z1_upper * cp, z2_upper * cp, "Fettoxidation dominant"),
+     #   ("Z3 - GA2 (Übergang)", z2_upper * cp, z3_upper * cp, "Mischstoffwechsel"),
+    #    ("Z4 - Schwelle", z3_upper * cp, z4_upper * cp, "MLSS / CP bis 105%"),
+    #    ("Z5 - VO2max", z4_upper * cp, 1.25 * cp, "Intensive Reize"),
+    #]
+
+    # df = pd.DataFrame(zones, columns=["Zone", "von [W]", "bis [W]", "Beschreibung"])
+    #df = df[["Zone", "von [W]", "bis [W]", "% von CP", "Beschreibung"]]
+    #df["von [W]"] = df["von [W]"].round(0).astype(int)
+    #df["bis [W]"] = df["bis [W]"].round(0).astype(int)
+    
+    # Prozentbereich von CP ergänzen
+    #df["% von CP"] = [
+    #    f"{round((row['von [W]']/cp)*100):.0f}–{round((row['bis [W]']/cp)*100):.0f} %"
+    #    for _, row in df.iterrows()
+    #]
+    
+    #return df
 
 def calc_ga1_zone(fatmax_w, cp, vlamax):
     """Liefert den GA1-Bereich als Watt- und Prozentwerte zurück (FatMax-basiert)."""
