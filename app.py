@@ -134,12 +134,12 @@ if "results" in st.session_state:
     st.subheader("📊 Ergebnisse")
     df = pd.DataFrame({
         "Parameter": [
-            "Datum", "Name", "Geburtsdatum", "Gewicht", "Körperfett", "CP", "W′", "FTP", "VO₂max (l/min)", "VO₂max rel. (ml/min/kg)",
+            "Datum", "Name", "Geburtsdatum", "Gewicht", "Körperfett", "CP", "W′", "FTP", "FTP W/kg", "VO₂max (l/min)", "VO₂max rel. (ml/min/kg)",
             "VLaMax", "FatMax (W)", "FatMax (%CP)",
             "Empf. GA1-Zone (W)", "Empf. GA1-Zone (%CP)", "Athletentyp"
         ],
         "Wert": [
-            str(date.today()), athlete_name_val, str(r["birth_date"]), weight, bodyfat, round(r['cp']), round(r['w_prime']), round(r['ftp_corr']), round(r['vo2_abs'],2), round(r['vo2_rel'],1),
+            str(date.today()), athlete_name_val, str(r["birth_date"]), weight, bodyfat, round(r['cp']), round(r['w_prime']), round(r['ftp_corr']), r['ftp_corr']/r['weight']:.2f, round(r['vo2_abs'],2), round(r['vo2_rel'],1),
             round(r['vlamax'],3), f"{round(r['fatmax_w'],1)}", f"{round((r['fatmax_w']/r['cp'])*100,1)} %",
             f"{int(r['ga1_min'])}–{int(r['ga1_max'])}", f"{round(r['ga1_pct_min'],1)}–{round(r['ga1_pct_max'],1)} %", r['athlete_type']
         ]
