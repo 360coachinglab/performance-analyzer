@@ -148,7 +148,7 @@ if "results" in st.session_state:
 
     # Anzeige
     st.dataframe(zones, use_container_width=True)
-    st.markdown(zones.to_markdown(index=False))
+    # st.markdown(zones.to_markdown(index=False))
 
 
 
