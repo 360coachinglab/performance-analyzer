@@ -146,12 +146,12 @@ if "results" in st.session_state:
     })
     st.markdown(tabulate(df, headers='keys', tablefmt='github', showindex=False))
 
-#   st.subheader("🏁 Trainingszonen (dynamisch: CP + VLamax + FatMax)")
+#   st.subheader("🏁 Trainingszonen)")
 #   st.dataframe(r['zones_df'], use_container_width=True)
 #   st.markdown(r['zones_df'].to_markdown(index=False))
 
     # ---------- NEUER ZONEN-ABSCHNITT ----------
-    st.subheader("🏁 Trainingszonen (CP-basiert, VLamax + FatMax)")
+    st.subheader("🏁 Trainingszonen")
 
     # Berechnung (aus neuer zones.py)
     # zones = calc_zones(r['cp'], hfmax=None, fatmax_w=r['fatmax_w'], vlamax=r['vlamax'])
@@ -167,21 +167,21 @@ if "results" in st.session_state:
     st.subheader("🎯 Dashboard Visuals")
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown("**VLamax Gauge**")
+        st.markdown("**VLamax**")
         fig, ax = plt.subplots(figsize=(4,2))
         ax.barh([0], [r['vlamax']], height=0.4)
         ax.set_xlim(0,1); ax.set_yticks([]); ax.set_xlabel("mmol/l/s")
         ax.text(min(max(r['vlamax'],0),1), 0, f"{r['vlamax']:.2f}", va="center", ha="center")
         st.pyplot(fig)
     with c2:
-        st.markdown("**VO₂max Gauge**")
+        st.markdown("**VO₂max**")
         fig, ax = plt.subplots(figsize=(4,2))
         lo, hi = 40, 80
         val = max(lo, min(hi, r['vo2_rel']))
         ax.barh([0], [val-lo], height=0.4)
         ax.set_xlim(0, hi-lo); ax.set_yticks([])
         ax.set_xlabel("ml/min/kg (40–80)")
-        ax.text(val-lo, 0, f"{r['vo2_rel']:.1f}", va="center", ha="center")
+        ax.text(val-lo, 40, f"{r['vo2_rel']:.1f}", va="center", ha="center")
         st.pyplot(fig)
 
     st.markdown("**FatMax & Zonen (W)**")
