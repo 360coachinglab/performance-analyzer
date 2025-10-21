@@ -5,7 +5,8 @@ import numpy as np
 from datetime import date
 from tabulate import tabulate
 
-from calculations.critical_power import calc_critical_power
+#from calculations.critical_power import calc_critical_power
+from calculations.critical_power import calc_critical_power, corrected_ftp
 from calculations.vo2max import calc_vo2max
 from calculations.vlamax_exact import calc_vlamax_exact_with_ffm
 from calculations.vlamax import calc_vlamax as calc_vlamax_classic
@@ -35,6 +36,7 @@ def compute_analysis(inputs: dict):
     p3 = None if p3min == 0 else p3min
 
     cp, w_prime = calc_critical_power(p20s=peak20, p1min=p1, p3min=p3, p5min=p5min, p12min=p12min)
+    ftp_corr = corrected_ftp(cp, vlamax) if "vlamax" in locals() else cp
     vo2_abs, vo2_rel = calc_vo2max(p5min, weight, gender, method="B")  # 7 + 10.8*(P5/kg)
     ffm = weight * (1 - bodyfat / 100)
 
@@ -59,6 +61,7 @@ def compute_analysis(inputs: dict):
 
     return {
         "cp": cp, "w_prime": w_prime,
+        "ftp_corr": ftp_corr,
         "vo2_abs": vo2_abs, "vo2_rel": vo2_rel,
         "vlamax": vlamax, "model_used": model_used,
         "fatmax_w": fatmax_w, "zones_df": zones_df,
@@ -115,9 +118,11 @@ if "results" in st.session_state:
     st.subheader("🔢 Leistungskennzahlen")
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("CP", f"{r['cp']:.0f} W")
-    #m2.metric("W′", f"{r['w_prime']:.0f} J")
+    m2.metric("W′", f"{r['w_prime']:.0f} J")
     m3.metric("VO₂max rel.", f"{r['vo2_rel']:.1f} ml/min/kg")
     m4.metric(f"VLaMax ({r['model_used']})", f"{r['vlamax']:.3f} mmol/l/s")
+    st.metric("Empfohlener FTP (TrainingPeaks)", f"{r['ftp_corr']:.0f} W")
+    st.caption(f"entspricht ca. {r['ftp_corr']/r['cp']*100:.1f}% von CP – automatisch korrigiert nach VLamax")
     #st.caption("VO₂: Formel B = 7 + 10.8 × (P5/kg)")
 
     st.subheader("📊 Ergebnisse")
