@@ -18,3 +18,21 @@ def calc_critical_power(p20s=None, p1min=None, p3min=None, p5min=None, p12min=No
     coeffs, *_ = np.linalg.lstsq(A, p, rcond=None)
     cp, w_prime = float(coeffs[0]), float(coeffs[1])
     return round(cp, 1), round(w_prime, 1)
+
+def corrected_ftp(cp: float, vlamax: float) -> float:
+    """
+    Gibt den empfohlenen FTP-Wert für TrainingPeaks basierend auf VLamax zurück.
+    Niedrige VLamax → CP ~ FTP,
+    hohe VLamax → FTP deutlich unter CP.
+    """
+
+    if vlamax <= 0.3:
+        factor = 1.00
+    elif vlamax <= 0.5:
+        factor = 0.98
+    elif vlamax <= 0.7:
+        factor = 0.95
+    else:
+        factor = 0.93
+
+    return round(cp * factor, 1)
