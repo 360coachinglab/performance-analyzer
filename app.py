@@ -175,14 +175,25 @@ if "results" in st.session_state:
         st.pyplot(fig)
     with c2:
         st.markdown("**VO₂max**")
-        fig, ax = plt.subplots(figsize=(4,2))
-        lo, hi = 40, 80
-        val = max(lo, min(hi, r['vo2_rel']))
-        ax.barh([0], [val-lo], height=0.4)
-        ax.set_xlim(40, hi-lo); ax.set_yticks([])
-        ax.set_xlabel("ml/min/kg (40–80)")
-        ax.text(val-lo, 0, f"{r['vo2_rel']:.1f}", va="center", ha="center")
-        st.pyplot(fig)
+    fig, ax = plt.subplots(figsize=(4, 2))
+
+    lo, hi = 45, 85  # gewünschte Achsengrenzen
+    val = max(lo, min(hi, r['vo2_rel']))  # clamp VO₂max-Wert
+
+    # Balken: von lo bis val
+    ax.barh([0], [val - lo], height=0.4, color="#4CAF50")
+    ax.set_xlim(lo, hi)
+    ax.set_yticks([])
+    ax.set_xlabel("ml/min/kg")
+
+    # Beschriftung mittig über Balken
+    ax.text(val, 0, f"{r['vo2_rel']:.1f}", va="center", ha="center", fontsize=10, fontweight="bold")
+
+    # Achsenmarken für untere/obere Grenze
+    ax.text(lo, 0.4, f"{lo}", ha="center", fontsize=8)
+    ax.text(hi, 0.4, f"{hi}", ha="center", fontsize=8)
+
+    st.pyplot(fig)
 
     st.markdown("**FatMax & Zonen (W)**")
     fig, ax = plt.subplots(figsize=(8,1.5))
