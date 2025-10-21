@@ -20,8 +20,11 @@ def calc_zones(cp, hfmax, fatmax_w, vlamax):
     # GA1 obere Grenze dynamisch nach VLamax (zwischen 0.68–0.75)
     z2_upper = (0.75 - 0.10 * (v - 0.3)) * (1 + s)
     z2_upper = max(0.65, min(z2_upper, 0.75))
-    z3_upper = 0.90 * (1 + s)
-    z4_upper = 1.05 * (1 + s)
+    # z3_upper = 0.90 * (1 + s)
+    # z4_upper = 1.05 * (1 + s)
+    # Schwellenbereich (Z4) dynamisch nach VLamax anpassen
+    z3_upper = (0.90 + 0.05 * (0.5 - v)) * (1 + s)
+    z4_upper = (1.05 + 0.05 * (0.3 - v)) * (1 + s)
 
     # --- FatMax-Korrektur: FatMax immer innerhalb von Zone 2 (GA1) ---
     fatmax_rel = None if fatmax_w is None or cp == 0 else fatmax_w / cp
@@ -34,7 +37,7 @@ def calc_zones(cp, hfmax, fatmax_w, vlamax):
     # --- Wattbereiche (weiterhin dynamisch!) ---
     zones = [
         ("Z1 - Regeneration", 0, z1_upper * cp, "Sehr locker, aktive Erholung"),
-        ("Z2 - GA1 (Fettstoffwechsel)", z1_upper * cp, z2_upper * cp, "Fettoxidation dominant"),
+        ("Z2 - Ausdauer (Fettstoffwechsel)", z1_upper * cp, z2_upper * cp, "Fettoxidation dominant"),
         ("Z3 - Tempo", z2_upper * cp, z3_upper * cp, "Mischstoffwechsel"),
         ("Z4 - Schwelle", z3_upper * cp, z4_upper * cp, "MLSS / CP"),
         ("Z5 - VO2max", z4_upper * cp, 1.30 * cp, "Intensive Reize"),
