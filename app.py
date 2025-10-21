@@ -62,6 +62,8 @@ def compute_analysis(inputs: dict):
     return {
         "cp": cp, "w_prime": w_prime,
         "ftp_corr": ftp_corr,
+        "weight": weight,
+        "w_prime": w_prime,
         "vo2_abs": vo2_abs, "vo2_rel": vo2_rel,
         "vlamax": vlamax, "model_used": model_used,
         "fatmax_w": fatmax_w, "zones_df": zones_df,
@@ -118,7 +120,8 @@ if "results" in st.session_state:
     st.subheader("🔢 Leistungskennzahlen")
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("CP", f"{r['cp']:.0f} W")
-    m2.metric("W′", f"{r['w_prime']:.0f} J")
+    # m2.metric("W′", f"{r['w_prime']:.0f} J")
+    m2.metric("FTP (W/kg)", f"{r['ftp_corr']/r['weight']:.2f}")
     m3.metric("VO₂max rel.", f"{r['vo2_rel']:.1f} ml/min/kg")
     m4.metric(f"VLaMax ({r['model_used']})", f"{r['vlamax']:.3f} mmol/l/s")
     st.metric("Empfohlener FTP (TrainingPeaks)", f"{r['ftp_corr']:.0f} W")
@@ -128,12 +131,12 @@ if "results" in st.session_state:
     st.subheader("📊 Ergebnisse")
     df = pd.DataFrame({
         "Parameter": [
-            "Datum", "Name", "CP", "W′", "VO₂max (l/min)", "VO₂max rel. (ml/min/kg)",
+            "Datum", "Name", "Gewicht", "CP", "W′", "VO₂max (l/min)", "VO₂max rel. (ml/min/kg)",
             "VLaMax", "FatMax (W)", "FatMax (%CP)",
             "Empf. GA1-Zone (W)", "Empf. GA1-Zone (%CP)", "Athletentyp"
         ],
         "Wert": [
-            str(date.today()), athlete_name_val, r['cp'], r['w_prime'], round(r['vo2_abs'],2), round(r['vo2_rel'],1),
+            str(date.today()), athlete_name_val, weight, r['cp'], r['w_prime'], round(r['vo2_abs'],2), round(r['vo2_rel'],1),
             round(r['vlamax'],3), f"{round(r['fatmax_w'],1)}", f"{round((r['fatmax_w']/r['cp'])*100,1)} %",
             f"{int(r['ga1_min'])}–{int(r['ga1_max'])}", f"{round(r['ga1_pct_min'],1)}–{round(r['ga1_pct_max'],1)} %", r['athlete_type']
         ]
