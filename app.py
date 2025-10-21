@@ -23,6 +23,7 @@ def compute_analysis(inputs: dict):
     gender = inputs['gender']
     weight = inputs['weight']
     bodyfat = inputs['bodyfat']
+    birth_date = inputs['birth_date']
     hfmax = inputs['hfmax']
     p1min = inputs.get('p1min') or 0
     p3min = inputs.get('p3min') or 0
@@ -63,6 +64,7 @@ def compute_analysis(inputs: dict):
         "cp": cp, "w_prime": w_prime,
         "ftp_corr": ftp_corr,
         "weight": weight,
+        "birth_date": inputs["birth_date"],
         "w_prime": w_prime,
         "vo2_abs": vo2_abs, "vo2_rel": vo2_rel,
         "vlamax": vlamax, "model_used": model_used,
@@ -83,6 +85,7 @@ with st.form("input_form"):
         gender = st.selectbox("Geschlecht", ["Mann", "Frau"], key="gender")
         weight = st.number_input("Körpergewicht (kg)", 40.0, 140.0, 70.0, key="weight")
         bodyfat = st.number_input("Körperfett (%)", 3.0, 40.0, 15.0, step=0.1, key="bodyfat")
+        birth_date = st.date_input("Geburtsdatum", key="birth_date")
     with col2:
         hfmax = st.number_input("HFmax", 100, 220, 190, key="hfmax")
         p1min = st.number_input("Power 1min (W)", 0, 2000, 0, help="Optional – 0 falls unbekannt", key="p1min")
@@ -102,7 +105,7 @@ if submitted:
         st.warning("Bitte **Athletenname** eingeben.")
     else:
         inputs = dict(
-            gender=st.session_state["gender"], weight=st.session_state["weight"], bodyfat=st.session_state["bodyfat"],
+            gender=st.session_state["gender"], weight=st.session_state["weight"], bodyfat=st.session_state["bodyfat"], birth_date=st.session_state["birth_date"],
             hfmax=st.session_state["hfmax"], p1min=st.session_state["p1min"], p3min=st.session_state["p3min"],
             p5min=st.session_state["p5min"], p12min=st.session_state["p12min"],
             sprint_dur=st.session_state["sprint_dur"], avg20=st.session_state["avg20"], peak20=st.session_state["peak20"]
@@ -131,12 +134,12 @@ if "results" in st.session_state:
     st.subheader("📊 Ergebnisse")
     df = pd.DataFrame({
         "Parameter": [
-            "Datum", "Name", "Gewicht", "CP", "W′", "VO₂max (l/min)", "VO₂max rel. (ml/min/kg)",
+            "Datum", "Name", "Geburtsdatum", "Gewicht", "Körperfett", "CP", "W′", "VO₂max (l/min)", "VO₂max rel. (ml/min/kg)",
             "VLaMax", "FatMax (W)", "FatMax (%CP)",
             "Empf. GA1-Zone (W)", "Empf. GA1-Zone (%CP)", "Athletentyp"
         ],
         "Wert": [
-            str(date.today()), athlete_name_val, weight, r['cp'], r['w_prime'], round(r['vo2_abs'],2), round(r['vo2_rel'],1),
+            str(date.today()), athlete_name_val, str(r["birth_date"]), weight, bodyfat, r['cp'], r['w_prime'], round(r['vo2_abs'],2), round(r['vo2_rel'],1),
             round(r['vlamax'],3), f"{round(r['fatmax_w'],1)}", f"{round((r['fatmax_w']/r['cp'])*100,1)} %",
             f"{int(r['ga1_min'])}–{int(r['ga1_max'])}", f"{round(r['ga1_pct_min'],1)}–{round(r['ga1_pct_max'],1)} %", r['athlete_type']
         ]
