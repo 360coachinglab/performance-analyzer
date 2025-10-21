@@ -143,7 +143,8 @@ if "results" in st.session_state:
     st.subheader("🏁 Trainingszonen (CP-basiert, VLamax + FatMax)")
 
     # Berechnung (aus neuer zones.py)
-    zones = calc_zones(r['cp'], hfmax=None, fatmax_w=r['fatmax_w'], vlamax=r['vlamax'])
+    # zones = calc_zones(r['cp'], hfmax=None, fatmax_w=r['fatmax_w'], vlamax=r['vlamax'])
+    zones = calc_zones(cp, hfmax, fatmax_w, vlamax)
 
     # Anzeige
     st.dataframe(zones, use_container_width=True)
