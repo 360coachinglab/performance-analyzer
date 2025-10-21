@@ -98,7 +98,7 @@ def create_analysis_pdf(output_path, athlete_name, vo2_rel, vlamax, cp, w_prime,
         cpcurve_path = f"{tmp}/cpcurve.png"
         _plot_vlamax_gauge(vlamax, gauge_v_path)
         _plot_vo2_gauge(vo2_rel, gauge_vo2_path)
-        _plot_fatmax_in_zones(fatmax_w, cp, ga1_range, ga2_range, fatmax_path)
+        _plot_fatmax_in_zones(fatmax_w, cp, (ga1_range[0], ga1_range[1]), (ga2_range[0], ga2_range[1]), fatmax_path)
         _plot_cp_curve(cp, w_prime, pts or [], cpcurve_path)
 
         img_h = 3.5*cm; img_w = 8.0*cm

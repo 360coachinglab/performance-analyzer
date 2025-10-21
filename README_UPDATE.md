@@ -1,17 +1,11 @@
 
-# Performance Analyzer v1.9.9 – PDF Export Edition (neutral)
+# Performance Analyzer v1.9.9a – PDF + Zonen
 
-## Neu
-- PDF-Export in der App (weißes, neutrales Layout) inkl. Kennzahlen, Erklärtexte, Gauges (VO₂, VLamax), FatMax-in-Zonen, CP-Kurve.
-
-## Abhängigkeiten
-Bitte `requirements.txt` ergänzen:
-reportlab>=4.0.0
-
-(plus vorhanden: streamlit, pandas, numpy, matplotlib, scikit-learn, joblib, tabulate)
+## Fix & Features
+- Zonen-Anzeige ist wieder aktiv (DataFrame + Markdown-Tabelle).
+- PDF-Export (neutral) enthält: VO₂/VLamax Gauges, FatMax in Zonen, CP-Kurve.
 
 ## Nutzung
-1) Dateien ins Projekt legen.
-2) `pip install -r requirements.txt`
-3) In `app.py` importieren: `from pdf_export import create_analysis_pdf` (falls noch nicht vorhanden).
-4) App starten → Analyse durchführen → **PDF exportieren**.
+1) ZIP entpacken und Dateien in dein Projekt kopieren.
+2) `pip install reportlab` (falls noch nicht installiert).
+3) `streamlit run app.py`
