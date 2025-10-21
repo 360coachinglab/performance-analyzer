@@ -54,13 +54,13 @@ def _plot_cp_curve(cp, w_prime, pts, path):
     plt.close(fig)
 
 def create_analysis_pdf(output_path, athlete_name, vo2_rel, vlamax, cp, w_prime, fatmax_w, ga1_range, ga2_range, pts=None):
-    c = canvas.Canvas(output_path, pagesize=A4)
+    c = canvas.Canvas(str(output_path), pagesize=A4)
     width, height = A4
     margin = 2*cm
     y = height - margin
 
     c.setFont("Helvetica-Bold", 16)
-    c.drawString(margin, y, "360 Coaching Lab – Performance Analyse")
+    c.drawString(margin, y, "Performance Analyse")
     y -= 0.8*cm
     c.setFont("Helvetica", 11)
     c.setFillColor(colors.grey)
@@ -91,14 +91,15 @@ def create_analysis_pdf(output_path, athlete_name, vo2_rel, vlamax, cp, w_prime,
     c.setStrokeColor(colors.lightgrey); c.line(margin, y, width-margin, y); c.setStrokeColor(colors.black)
     y -= 0.6*cm
 
+    import tempfile, os
     with tempfile.TemporaryDirectory() as tmp:
-        gauge_v_path = f"{tmp}/vlamax.png"
-        gauge_vo2_path = f"{tmp}/vo2.png"
-        fatmax_path = f"{tmp}/fatmax.png"
-        cpcurve_path = f"{tmp}/cpcurve.png"
+        gauge_v_path = os.path.join(tmp, "vlamax.png")
+        gauge_vo2_path = os.path.join(tmp, "vo2.png")
+        fatmax_path = os.path.join(tmp, "fatmax.png")
+        cpcurve_path = os.path.join(tmp, "cpcurve.png")
         _plot_vlamax_gauge(vlamax, gauge_v_path)
         _plot_vo2_gauge(vo2_rel, gauge_vo2_path)
-        _plot_fatmax_in_zones(fatmax_w, cp, (ga1_range[0], ga1_range[1]), (ga2_range[0], ga2_range[1]), fatmax_path)
+        _plot_fatmax_in_zones(fatmax_w, cp, ga1_range, ga2_range, fatmax_path)
         _plot_cp_curve(cp, w_prime, pts or [], cpcurve_path)
 
         img_h = 3.5*cm; img_w = 8.0*cm
@@ -116,5 +117,5 @@ def create_analysis_pdf(output_path, athlete_name, vo2_rel, vlamax, cp, w_prime,
 
     c.setFillColor(colors.grey)
     c.setFont("Helvetica", 9)
-    c.drawRightString(width - margin, 1.5*cm, "© 360 Coaching Lab")
+    c.drawRightString(width - margin, 1.5*cm, "©")
     c.save()

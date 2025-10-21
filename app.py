@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
 from datetime import date
-import tempfile
 
 from calculations.critical_power import calc_critical_power
 from calculations.vo2max import calc_vo2max
@@ -16,13 +15,11 @@ from calculations.zones import calc_zones, calc_ga1_zone
 from utils.athlete_type import determine_athlete_type
 from pdf_export import create_analysis_pdf
 
-st.set_page_config(page_title="360 Coaching Lab – Performance Analyzer", page_icon="🚴", layout="wide")
+st.set_page_config(page_title="Performance Analyzer", page_icon="🚴", layout="wide")
 
-st.sidebar.markdown("### 🧬 360 Coaching Lab")
-st.sidebar.markdown("---")
-st.sidebar.markdown("**Version:** 1.9.9a (PDF + Zonen)**")
+st.sidebar.markdown("**Version:** 1.9.9b (Neutral • Dynamic Zones + PDF)")
 
-st.title("🚴 360 Coaching Lab – Performance Analyzer")
+st.title("Performance Analyzer")
 st.markdown("#### Leistungsdiagnostik & physiologische Analyse")
 
 athlete_name = st.text_input("Athletenname", placeholder="Name eingeben")
@@ -35,8 +32,8 @@ with col1:
     bodyfat = st.number_input("Körperfett (%)", 3.0, 40.0, 15.0, step=0.1)
 with col2:
     hfmax = st.number_input("HFmax", 100, 220, 190)
-    p1min = st.number_input("Power 1min (W)", 0, 2000, 0, help="Optional – leer (0) falls unbekannt")
-    p3min = st.number_input("Power 3min (W)", 0, 2000, 0, help="Optional – leer (0) falls unbekannt")
+    p1min = st.number_input("Power 1min (W)", 0, 2000, 0, help="Optional – 0 falls unbekannt")
+    p3min = st.number_input("Power 3min (W)", 0, 2000, 0, help="Optional – 0 falls unbekannt")
     p5min = st.number_input("Power 5min (W)", 100, 2000, 350)
     p12min = st.number_input("Power 12min (W)", 100, 2000, 300)
 with col3:
@@ -53,7 +50,7 @@ if st.button("Analyse starten 🚀"):
     p3 = None if p3min == 0 else p3min
 
     cp, w_prime = calc_critical_power(p20s=peak20, p1min=p1, p3min=p3, p5min=p5min, p12min=p12min)
-    vo2_abs, vo2_rel = calc_vo2max(p5min, weight, gender, method="B")
+    vo2_abs, vo2_rel = calc_vo2max(p5min, weight, gender, method="B")  # 7 + 10.8*(P5/kg)
     ffm = weight * (1 - bodyfat / 100)
 
     try:
@@ -92,10 +89,8 @@ if st.button("Analyse starten 🚀"):
     from tabulate import tabulate
     st.markdown(tabulate(df, headers='keys', tablefmt='github', showindex=False))
 
-    # ---- Zonen-Anzeige ----
-    st.subheader("🏁 Trainingszonen (basierend auf CP & VLamax)")
+    st.subheader("🏁 Trainingszonen (dynamisch: CP + VLamax + FatMax)")
     st.dataframe(zones, use_container_width=True)
-    st.markdown("**Tabellarisch:**")
     st.markdown(zones.to_markdown(index=False))
 
     st.subheader("🎯 Dashboard Visuals")
@@ -146,14 +141,17 @@ if st.button("Analyse starten 🚀"):
     ax.legend()
     st.pyplot(fig)
 
-    # === PDF EXPORT ===
     st.subheader("📄 Export")
+    export_dir = Path("exports")
+    export_dir.mkdir(exist_ok=True)
+    pdf_path = export_dir / f"{athlete_name or 'analyse'}_{date.today().isoformat()}.pdf"
     if st.button("PDF exportieren"):
-        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-            create_analysis_pdf(
-                tmp.name, athlete_name, vo2_rel, vlamax, cp, w_prime, fatmax_w,
-                (ga1_min, ga1_max), (ga1_max, 0.90*cp),
-                pts=pts
-            )
-            st.success("PDF erstellt.")
-            st.download_button("PDF herunterladen", data=open(tmp.name, "rb").read(), file_name=f"{athlete_name or 'analyse'}_{date.today().isoformat()}.pdf", mime="application/pdf")
+        create_analysis_pdf(
+            pdf_path, athlete_name, vo2_rel, vlamax, cp, w_prime, fatmax_w,
+            (ga1_min, ga1_max), (ga1_max, 0.90*cp),
+            pts=pts
+        )
+        st.success(f"PDF exportiert: {pdf_path}")
+    if pdf_path.exists():
+        with open(pdf_path, "rb") as f:
+            st.download_button("📄 PDF herunterladen", data=f, file_name=pdf_path.name, mime="application/pdf")
