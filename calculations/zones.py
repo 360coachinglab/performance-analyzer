@@ -2,7 +2,6 @@
 import pandas as pd
 
 def _vlamax_shift(vlamax: float) -> float:
-    # Low VLamax (~0.2) -> +5% (Zonen höher), High VLamax (~1.0) -> -5% (Zonen tiefer), zentriert bei 0.6
     v = max(0.2, min(float(vlamax), 1.0))
     return ((0.6 - v) / 0.4) * 0.05  # ±5%
 
@@ -14,7 +13,6 @@ def _ensure_fatmax_inside_ga1(ga1_pct, fatmax_pct_cp, margin=0.02):
     lo, hi = ga1_pct
     if fatmax_pct_cp is None:
         return ga1_pct
-    # falls FatMax knapp außerhalb liegt, Korridor leicht erweitern
     if fatmax_pct_cp < lo:
         lo = min(lo, max(0.45, fatmax_pct_cp - margin))
     if fatmax_pct_cp > hi:
@@ -25,7 +23,6 @@ def calc_zones(cp, hfmax, fatmax_w, vlamax):
     cp = float(cp)
     fatmax_pct_cp = None if cp <= 0 or fatmax_w is None else float(fatmax_w)/cp
 
-    # Basisbänder (als % von CP)
     base = {
         "GA1": (0.60, 0.75),
         "GA2": (0.75, 0.90),
@@ -39,18 +36,13 @@ def calc_zones(cp, hfmax, fatmax_w, vlamax):
     ga2 = _apply_shift(base["GA2"], s)
     eb  = _apply_shift(base["EB"],  s)
     sb  = _apply_shift(base["SB"],  s)
-    r   = base["R"]  # Sprint/neuromuskulär bleibt als Oberbereich
+    r   = base["R"]
 
     ordered = [("GA1", ga1), ("GA2", ga2), ("EB", eb), ("SB", sb), ("R", r)]
     rows = []
     for name, (lo, hi) in ordered:
-        lo_w = lo * cp
-        hi_w = hi * cp
-        rows.append({
-            "Zone": name,
-            "Leistung (W)": f"{lo_w:.0f}–{hi_w:.0f}",
-            "Prozent CP": f"{lo*100:.1f}%–{hi*100:.1f}%"
-        })
+        lo_w = lo * cp; hi_w = hi * cp
+        rows.append({"Zone": name, "Leistung (W)": f"{lo_w:.0f}–{hi_w:.0f}", "Prozent CP": f"{lo*100:.1f}%–{hi*100:.1f}%"})
     return pd.DataFrame(rows)
 
 def calc_ga1_zone(fatmax_w, cp, vlamax):
