@@ -214,19 +214,57 @@ with c2:
     ax.set_xlim(0, r['cp']*1.1); ax.set_yticks([]); ax.set_xlabel("Watt")
     st.pyplot(fig)
 
+#   st.subheader("📈 Critical Power Kurve")
+#   t_pts = np.array([t for t,_ in r['pts']], dtype=float) if r['pts'] else np.array([])
+#   p_pts = np.array([p for _,p in r['pts']], dtype=float) if r['pts'] else np.array([])
+#   fig, ax = plt.subplots()
+#   t_curve = np.linspace(15, 1200, 200)
+#   p_curve = r['cp'] + (r['w_prime'] / t_curve)
+#   ax.plot(t_curve, p_curve, label="CP-Modell")
+#   if r['pts']:
+#   ax.scatter(t_pts, p_pts, label="Messpunkte")
+#   ax.set_xscale("log")
+#   ax.set_xlabel("Dauer (s) (log)"); ax.set_ylabel("Leistung (W)")
+#   ax.legend()
+#   st.pyplot(fig)
+    
+    
     st.subheader("📈 Critical Power Kurve")
-    t_pts = np.array([t for t,_ in r['pts']], dtype=float) if r['pts'] else np.array([])
-    p_pts = np.array([p for _,p in r['pts']], dtype=float) if r['pts'] else np.array([])
-    fig, ax = plt.subplots()
-    t_curve = np.linspace(15, 1200, 200)
-    p_curve = r['cp'] + (r['w_prime'] / t_curve)
-    ax.plot(t_curve, p_curve, label="CP-Modell")
-    if r['pts']:
-        ax.scatter(t_pts, p_pts, label="Messpunkte")
-    ax.set_xscale("log")
-    ax.set_xlabel("Dauer (s) (log)"); ax.set_ylabel("Leistung (W)")
-    ax.legend()
-    st.pyplot(fig)
+    # Punkte aus Analyse übernehmen
+    pts = r["pts"]  # aus compute_analysis()
+    if pts:
+        t_pts = np.array([t for t, _ in pts], dtype=float)
+        p_pts = np.array([p for _, p in pts], dtype=float)
+
+        fig, ax = plt.subplots(figsize=(6, 4))
+
+        # Modellierte Kurve (1/t-Beziehung)
+        t_curve = np.linspace(10, 1200, 300)
+        p_curve = r["cp"] + (r["w_prime"] / t_curve)
+
+        # Reale Messpunkte
+        ax.scatter(t_pts, p_pts, color="blue", label="Testdaten", zorder=3, s=40)
+
+        # Modellierte Kurve
+        ax.plot(t_curve, p_curve, color="red", linewidth=2, label="CP-Modell", zorder=2)
+
+        # Formatierung
+        ax.set_xscale("log")
+        ax.set_xlabel("Dauer (s, logarithmisch)")
+        ax.set_ylabel("Leistung (W)")
+        ax.set_title("Critical Power Modell")
+        ax.grid(True, which="both", linestyle="--", linewidth=0.5, alpha=0.7)
+        ax.legend()
+
+        # Optional: CP-Linie
+        ax.axhline(r["cp"], color="gray", linestyle=":", linewidth=1)
+        ax.text(t_curve[-1], r["cp"], f"CP = {r['cp']:.0f} W", va="bottom", ha="right")
+
+        st.pyplot(fig)
+    else:
+        st.info("Keine ausreichenden Testpunkte für CP-Kurve vorhanden.")
+    
+    
 
     # ----- Export -----
     st.subheader("📄 Export")
