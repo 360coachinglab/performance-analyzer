@@ -264,8 +264,14 @@ with c2:
         ax.text(t_curve[-1], cp + 5, f"CP = {cp:.0f} W", va="bottom", ha="right", fontsize=9, color="gray")
 
         # Achsen + Layout
+        # Achse logarithmisch, aber lesbare Sekundenwerte anzeigen
         ax.set_xscale("log")
-        ax.set_xlabel("Dauer (s, logarithmisch)")
+        ax.set_xlabel("Dauer (s)")
+
+        # Definierte Tick-Positionen (typische Testzeiten)
+        xticks = [20, 60, 180, 300, 600, 900, 1200]
+        ax.set_xticks(xticks)
+        ax.set_xticklabels([str(int(x)) for x in xticks])
         ax.set_ylabel("Leistung (W)")
         ax.set_title("Critical Power Modell mit Zonen")
         ax.grid(True, which="both", linestyle="--", linewidth=0.5, alpha=0.7)
