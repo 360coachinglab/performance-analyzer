@@ -12,14 +12,18 @@ def calc_zones(cp, hfmax, fatmax_w, vlamax):
 
     # --- Dynamische Anpassung durch VLamax (Shift ±5 %) ---
     v = max(0.2, min(float(vlamax), 1.0))
-    s = ((0.6 - v) / 0.4) * 0.05  # ±5 %
+    # vorher: *0.05
+    s = ((0.6 - v) / 0.4) * 0.03   # nur noch ±3 %
 
     # --- Basis-Prozentwerte (relative zu CP, aber verschiebbar) ---
     z1_upper = 0.55 * (1 + s)
     # z2_upper = 0.75 * (1 + s)
+    # GA1 obere Grenze dynamisch nach vlamax (vorher ~0.68–0.75), jetzt enger & sanfter
+    z2_upper = (0.74 - 0.08 * (v - 0.3)) * (1 + s)
+    z2_upper = max(0.66, min(z2_upper, 0.74))  # enger Korridor
     # GA1 obere Grenze dynamisch nach VLamax (zwischen 0.68–0.75)
-    z2_upper = (0.75 - 0.10 * (v - 0.3)) * (1 + s)
-    z2_upper = max(0.65, min(z2_upper, 0.75))
+    # z2_upper = (0.75 - 0.10 * (v - 0.3)) * (1 + s)
+    # z2_upper = max(0.65, min(z2_upper, 0.75))
     # z3_upper = 0.90 * (1 + s)
     # z4_upper = 1.05 * (1 + s)
     # Schwellenbereich (Z4) dynamisch nach VLamax anpassen
