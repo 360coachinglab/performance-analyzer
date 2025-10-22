@@ -17,72 +17,62 @@ def _weighted_linreg(x, y, w):
     b = yw - a * xw
     return a, b
 
-def calc_critical_power(p20s, p5min, p12min, p1min=None, p3min=None,
-                        weight_scheme="t2", enforce_bounds=True):
+def calc_critical_power(p20s, p5min, p12min, p1min=None, p3min=None):
     """
-    Berechnet CP und W′ per gewichteter Regression: P = W′/t + CP.
-
-    Punkte:
-      - 20 s, (60 s), (180 s), 300 s, 720 s (optional je nachdem, was vorliegt)
-    Gewichtung:
-      - 'equal' : alle gleich
-      - 't'     : Gewicht ∝ t
-      - 't2'    : Gewicht ∝ t^2  (empfohlen; lange Dauer zählt stark)
-    Schranken (falls enforce_bounds=True):
-      - CP <= 0.99 * P12 (falls vorhanden)
-      - CP <= 0.97 * P5  (falls vorhanden)
+    Berechnet Critical Power (CP) und W′ basierend auf einer gewichteten Regression
+    von Leistung vs. 1/Zeit (P = W′/t + CP).
+    - robust gegen fehlende Werte (None)
+    - CP ≤ längster bekannter Leistungswert (meist 12-min)
+    - längere Dauern werden stärker gewichtet
     """
 
-    pts = [
-        (20.0, p20s),
-        (60.0, p1min) if p1min else None,
-        (180.0, p3min) if p3min else None,
-        (300.0, p5min),
-        (720.0, p12min)
+    # Eingabepunkte sammeln (Zeit in s, Leistung in W)
+    raw_pts = [
+        (20,  p20s),
+        (60,  p1min),
+        (180, p3min),
+        (300, p5min),
+        (720, p12min)
     ]
-    pts = [(t, p) for (t, p) in pts if p is not None]
 
-    # Fallback, falls zu wenig Daten:
+    # Nur gültige Punkte behalten
+    pts = [(t, p) for (t, p) in raw_pts if p is not None and p > 0]
+
+    # Mindestens 2 Punkte nötig
     if len(pts) < 2:
-        cp = round(p5min * 0.90, 1)
-        w_prime = round(max(0.0, (p20s - cp)) * 15.0, 1)
-        return cp, w_prime
+        cp_est = round(p5min * 0.90, 1)
+        w_est  = round((p20s - cp_est) * 15, 1)
+        return cp_est, w_est
 
+    # Arrays
     t = np.array([t for t, _ in pts], dtype=float)
-    p = np.array([p for _, p in pts], dtype=float)
-    x = 1.0 / t
+    P = np.array([p for _, p in pts], dtype=float)
 
-    if weight_scheme == "equal":
-        w = np.ones_like(t)
-    elif weight_scheme == "t":
-        w = t
-    else:  # "t2" (default)
-        w = t ** 2
+    # Gewichtung: längere Zeiten wichtiger
+    w = (t / t.max()) ** 1.5
 
-    a, b = _weighted_linreg(x, p, w)
-    cp_raw = float(b)
-    w_prime_raw = float(a)
+    inv_t = 1.0 / t
+    X = np.vstack([inv_t, np.ones_like(inv_t)]).T
+    W = np.diag(w)
 
-    # Schranken: CP darf nicht über langen MMPs liegen
-    caps = []
-    if p12min is not None:
-        caps.append(0.99 * float(p12min))
-    if p5min is not None:
-        caps.append(0.97 * float(p5min))
+    # Weighted Least Squares Regression: P = a*(1/t) + b
+    beta = np.linalg.pinv(X.T @ W @ X) @ (X.T @ W @ P)
+    a, b = beta[0], beta[1]   # W′, CP
 
-    cp_capped = cp_raw
-    if caps:
-        cp_capped = min(cp_raw, min(caps))
+    cp = float(b)
+    wp = float(a)
 
-    # Untere Schranke (sehr weich), damit CP nicht „abstürzt“
-    if p12min is not None:
-        cp_capped = max(0.60 * float(p12min), cp_capped)
+    # Plausibilitäts-Check: CP nicht über längster Leistungswert
+    P_longest = P[t.argmax()]  # meist 12-min Leistung
+    if cp > P_longest:
+        cp = P_longest
+    if cp < 0:
+        cp = 0.0
+    if wp < 0:
+        wp = 0.0
 
-    # Final runden
-    cp = round(cp_capped, 1)
-    w_prime = round(max(0.0, w_prime_raw), 1)
+    return round(cp, 1), round(wp, 1)
 
-    return cp, w_prime
 
 
 def corrected_ftp(cp: float, vlamax: float) -> float:
