@@ -227,44 +227,58 @@ with c2:
 #   ax.set_xlabel("Dauer (s) (log)"); ax.set_ylabel("Leistung (W)")
 #   ax.legend()
 #   st.pyplot(fig)
-    
-    
+       
     st.subheader("📈 Critical Power Kurve")
-    # Punkte aus Analyse übernehmen
-    pts = r["pts"]  # aus compute_analysis()
+
+    pts = r["pts"]  # reale Datenpunkte
     if pts:
         t_pts = np.array([t for t, _ in pts], dtype=float)
         p_pts = np.array([p for _, p in pts], dtype=float)
 
-        fig, ax = plt.subplots(figsize=(6, 4))
+        fig, ax = plt.subplots(figsize=(7, 4))
 
         # Modellierte Kurve (1/t-Beziehung)
         t_curve = np.linspace(10, 1200, 300)
         p_curve = r["cp"] + (r["w_prime"] / t_curve)
 
+        # --- Farbige Hintergrundzonen (auf Basis der CP-Zonen) ---
+        cp = r["cp"]
+        z_colors = [
+            (0, 0.55 * cp, "#b3d9ff", "Z1"),       # blau, locker
+            (0.55 * cp, 0.75 * cp, "#c2f0c2", "Z2"), # grün, Fettstoffwechsel
+            (0.75 * cp, 0.90 * cp, "#ffffb3", "Z3"), # gelb, Übergang
+            (0.90 * cp, 1.05 * cp, "#ffd699", "Z4"), # orange, Schwelle
+            (1.05 * cp, 1.25 * cp, "#ff9999", "Z5"), # rot, VO2max
+        ]
+        for (low, high, color, label) in z_colors:
+            ax.axhspan(low, high, color=color, alpha=0.3, label=label)
+
         # Reale Messpunkte
-        ax.scatter(t_pts, p_pts, color="blue", label="Testdaten", zorder=3, s=40)
+        ax.scatter(t_pts, p_pts, color="blue", label="Testdaten", zorder=4, s=40)
 
         # Modellierte Kurve
-        ax.plot(t_curve, p_curve, color="red", linewidth=2, label="CP-Modell", zorder=2)
+        ax.plot(t_curve, p_curve, color="red", linewidth=2.2, label="CP-Modell", zorder=3)
 
-        # Formatierung
+        # CP-Linie
+        ax.axhline(cp, color="gray", linestyle="--", linewidth=1)
+        ax.text(t_curve[-1], cp + 5, f"CP = {cp:.0f} W", va="bottom", ha="right", fontsize=9, color="gray")
+
+        # Achsen + Layout
         ax.set_xscale("log")
         ax.set_xlabel("Dauer (s, logarithmisch)")
         ax.set_ylabel("Leistung (W)")
-        ax.set_title("Critical Power Modell")
+        ax.set_title("Critical Power Modell mit Zonen")
         ax.grid(True, which="both", linestyle="--", linewidth=0.5, alpha=0.7)
-        ax.legend()
 
-        # Optional: CP-Linie
-        ax.axhline(r["cp"], color="gray", linestyle=":", linewidth=1)
-        ax.text(t_curve[-1], r["cp"], f"CP = {r['cp']:.0f} W", va="bottom", ha="right")
+        # Legende schöner (nur einmal pro Zone)
+        handles, labels = ax.get_legend_handles_labels()
+        unique_labels = dict(zip(labels, handles))
+        ax.legend(unique_labels.values(), unique_labels.keys(), loc="upper right", fontsize=8)
 
         st.pyplot(fig)
+
     else:
         st.info("Keine ausreichenden Testpunkte für CP-Kurve vorhanden.")
-    
-    
 
     # ----- Export -----
     st.subheader("📄 Export")
