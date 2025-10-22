@@ -175,18 +175,31 @@ with c1:
     st.pyplot(fig)
 
 with c2:
-    st.markdown("**VO₂max**")
+    st.markdown("**VO₂max (ml/min/kg)**")
     fig, ax = plt.subplots(figsize=(4, 2))
     lo, hi = 45, 85  # gewünschte Achsengrenzen
     val = max(lo, min(hi, r['vo2_rel']))  # clamp VO₂max-Wert
-    # Balken: von lo bis val
-    ax.barh([0], [val - lo], height=0.4, color="#4CAF50")
+    # Farbsegmente (Bereiche können je nach Bedarf angepasst werden)
+    color_zones = [
+        (lo, 55, "#b3d9ff"),   # niedrig (hellblau)
+        (55, 65, "#80ffaa"),   # mittel (grün)
+        (65, 75, "#ffff80"),   # gut (gelb)
+        (75, 85, "#ff9966"),   # sehr gut / elite (orange)
+    ]
+    # Hintergrund-Farbflächen zeichnen
+    for start, end, color in color_zones:
+        ax.axvspan(start, end, color=color, alpha=0.6)
+    # Balken für aktuellen Wert
+    ax.barh([0], [val - lo], left=lo, height=0.35, color="#007a00")
+    # Anzeigegrenzen
     ax.set_xlim(lo, hi)
     ax.set_yticks([])
     ax.set_xlabel("ml/min/kg")
-    # Beschriftung mittig über Balken
-    ax.text(val, 0, f"{r['vo2_rel']:.1f}", va="center", ha="center", fontsize=10, fontweight="bold")
-    # Achsenmarken für untere/obere Grenze
+    ax.set_title("")
+    # Wertbeschriftung
+    ax.text(val, 0, f"{r['vo2_rel']:.1f}", va="center", ha="center",
+            fontsize=10, fontweight="bold", color="black")
+    # Achsenmarken
     ax.text(lo, 0.4, f"{lo}", ha="center", fontsize=8)
     ax.text(hi, 0.4, f"{hi}", ha="center", fontsize=8)
     st.pyplot(fig)
