@@ -207,45 +207,46 @@ else:
 
 
     st.markdown("**FatMax & Zonen (W)**")
-
-    fig, ax = plt.subplots(figsize=(8, 3))
+    fig, ax = plt.subplots(figsize=(8, 4))
 
     cp = r["cp"]
     fatmax = r["fatmax_w"]
     ga1_lo, ga1_hi = r["ga1_min"], r["ga1_max"]
-    ga2_lo, ga2_hi = ga1_hi, 0.90 * cp
+    ga2_lo, ga2_hi = ga1_hi, 0.9 * cp
 
-    # Leistungsskala
-    x = np.linspace(0.3 * cp, 1.1 * cp, 200)
+    # --- X-Achse: 0–110 % CP ---
+    x = np.linspace(0, cp * 1.1, 400)
 
-    # --- vereinfachtes Fettverbrennungs-Modell -------------------
-    # Gaussian-ähnliche Kurve: steigt bis FatMax, fällt danach steil ab
-    width = 0.12 * cp              # Breite des Fettstoffwechsel-Peaks
-    y = np.exp(-0.5 * ((x - fatmax) / width) ** 2)
-    y = y / y.max()                # Normieren auf 1
+    # --- Fettstoffwechsel (grün): steilerer Abfall nach FatMax ---
+    # Modell: ansteigend bis FatMax, dann exponentiell abfallend
+    y_fat = np.exp(-((x - fatmax) / (0.10 * cp)) ** 2.2)  # enger & steiler
+    y_fat = y_fat / y_fat.max() * 100
 
-    # --- Farbhintergrund für GA1 / GA2 ----------------------------
-    ax.axvspan(ga1_lo, ga1_hi, color="#b3ffb3", alpha=0.3, label="GA1 (Fettstoffwechsel)")
-    ax.axvspan(ga2_lo, ga2_hi, color="#ffff99", alpha=0.3, label="GA2 (Übergang)")
+    # --- Kohlenhydratverbrauch (rot): komplementär steigend ---
+    y_carb = 100 - y_fat
 
-# --- Fettverbrennungs-Kurve ----------------------------------
-    ax.plot(x, y, color="#007a00", linewidth=2.5, label="Fettverbrennung (relativ)")
+    # --- Zonenhintergrund (GA1 / GA2) ---
+    ax.axvspan(ga1_lo, ga1_hi, color="#b3ffb3", alpha=0.4, label="GA1 (Fettstoffwechsel)")
+    ax.axvspan(ga2_lo, ga2_hi, color="#ffff99", alpha=0.4, label="GA2 (Übergang)")
 
-# Peak markieren
-    ax.plot(fatmax, 1.0, "o", color="#004d00", markersize=8)
-    ax.text(fatmax, 1.05, f"FatMax = {fatmax:.0f} W", ha="center", fontsize=9, color="#004d00")
+    # --- Kurven zeichnen ---
+    ax.plot(x, y_fat, color="#007a00", linewidth=2.5, label="Fettstoffwechsel")
+    ax.plot(x, y_carb, color="#cc0000", linewidth=2.0, linestyle="--", label="Kohlenhydratstoffwechsel")
 
-# Layout
-    ax.set_xlim(0.3 * cp, 1.1 * cp)
-    ax.set_ylim(0, 1.2)
-    ax.set_xlabel("Leistung (Watt)")
-    ax.set_ylabel("relative Fettoxidation")
-    ax.set_title("Fettstoffwechselprofil mit FatMax")
+    # --- FatMax-Linie ---
+    ax.axvline(fatmax, color="#004d00", linestyle="--", linewidth=1.5)
+    ax.text(fatmax, 103, f"FatMax = {fatmax:.0f} W", ha="center", fontsize=9, color="#004d00")
+
+    # --- Layout & Achsen ---
+    ax.set_xlim(0, cp * 1.1)
+    ax.set_ylim(0, 110)
+    ax.set_xlabel("Leistung (W)")
+    ax.set_ylabel("Substratanteil (% vom Maximum)")
+    ax.set_title("Substratverwendung in Abhängigkeit der Leistung")
+    ax.grid(alpha=0.3)
     ax.legend(loc="upper right", fontsize=8)
-    ax.grid(True, linestyle="--", alpha=0.4)
 
     st.pyplot(fig)
-
 
 #   st.subheader("📈 Critical Power Kurve")
 #   t_pts = np.array([t for t,_ in r['pts']], dtype=float) if r['pts'] else np.array([])
