@@ -1,28 +1,47 @@
-
-# calculations/critical_power.py
 import numpy as np
 
-def calc_critical_power(p20s=None, p1min=None, p3min=None, p5min=None, p12min=None):
-    data = []
-    if p20s is not None: data.append((20.0, float(p20s)))
-    if p1min is not None: data.append((60.0, float(p1min)))
-    if p3min is not None: data.append((180.0, float(p3min)))
-    if p5min is not None: data.append((300.0, float(p5min)))
-    if p12min is not None: data.append((720.0, float(p12min)))
-    if len(data) < 2:
-        raise ValueError("Mindestens zwei Leistungswerte erforderlich (z. B. 5min & 12min).")
-    t = np.array([d[0] for d in data], dtype=float)
-    p = np.array([d[1] for d in data], dtype=float)
+def calc_critical_power(p20s, p5min, p12min, p1min=None, p3min=None):
+    """
+    Berechnet Critical Power (CP) und W′ basierend auf einer linearen Regression
+    von Leistung vs. 1/Zeit (P = W′/t + CP).
+    
+    Nutzt alle verfügbaren Leistungsdaten (20s, 1min, 3min, 5min, 12min),
+    und fällt automatisch auf einfachere Näherung zurück, wenn weniger Punkte vorhanden sind.
+    """
+
+    # Eingabepunkte sammeln
+    points = [
+        (20, p20s),
+        (60, p1min) if p1min else None,
+        (180, p3min) if p3min else None,
+        (300, p5min),
+        (720, p12min)
+    ]
+    points = [p for p in points if p is not None and p[1] is not None]
+
+    # Sicherheit: mindestens 2 Punkte nötig
+    if len(points) < 2:
+        cp = round(p5min * 0.9, 1)
+        w_prime = round((p20s - cp) * 15, 1)
+        return cp, w_prime
+
+    # Arrays vorbereiten
+    t = np.array([p[0] for p in points], dtype=float)
+    p = np.array([p[1] for p in points], dtype=float)
     inv_t = 1.0 / t
-    A = np.vstack([np.ones_like(inv_t), inv_t]).T
-    coeffs, *_ = np.linalg.lstsq(A, p, rcond=None)
-    cp, w_prime = float(coeffs[0]), float(coeffs[1])
-    return round(cp, 1), round(w_prime, 1)
+
+    # Lineare Regression: P = a*(1/t) + b
+    a, b = np.polyfit(inv_t, p, 1)
+    w_prime = round(a, 1)  # Steigung = W′
+    cp = round(b, 1)       # Achsenabschnitt = CP
+
+    return cp, w_prime
+
 
 def corrected_ftp(cp: float, vlamax: float) -> float:
     """
     Gibt den empfohlenen FTP-Wert für TrainingPeaks basierend auf VLamax zurück.
-    Niedrige VLamax → CP ~ FTP,
+    Niedrige VLamax → CP ≈ FTP,
     hohe VLamax → FTP deutlich unter CP.
     """
 
