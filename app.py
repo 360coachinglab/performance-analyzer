@@ -162,47 +162,49 @@ if "results" in st.session_state:
     # st.markdown(zones.to_markdown(index=False))
 
 st.subheader("🎯 Dashboard Visuals")
-c1, c2 = st.columns(2)
 
-with c1:
-    st.markdown("**VLamax**")
-    fig, ax = plt.subplots(figsize=(4,2))
-    ax.barh([0], [r['vlamax']], height=0.4)
-    ax.set_xlim(0,1)
-    ax.set_yticks([])
-    ax.set_xlabel("mmol/l/s")
-    ax.text(min(max(r['vlamax'],0),1), 0, f"{r['vlamax']:.2f}", va="center", ha="center")
-    st.pyplot(fig)
+# Nur anzeigen, wenn Analyseergebnisse vorhanden sind
+if "results" not in st.session_state or not st.session_state["results"]:
+    st.info("🔍 Noch keine Analyse durchgeführt. Bitte zuerst Daten eingeben und auf 'Analyse starten 🚀' klicken.")
+else:
+    r = st.session_state["results"]  # Ergebnisse laden
 
-with c2:
-    st.markdown("**VO₂max (ml/min/kg)**")
-    fig, ax = plt.subplots(figsize=(4, 2))
-    lo, hi = 45, 85  # gewünschte Achsengrenzen
-    val = max(lo, min(hi, r['vo2_rel']))  # clamp VO₂max-Wert
-    # Farbsegmente (Bereiche können je nach Bedarf angepasst werden)
-    color_zones = [
-        (lo, 55, "#b3d9ff"),   # niedrig (hellblau)
-        (55, 65, "#80ffaa"),   # mittel (grün)
-        (65, 75, "#ffff80"),   # gut (gelb)
-        (75, 85, "#ff9966"),   # sehr gut / elite (orange)
-    ]
-    # Hintergrund-Farbflächen zeichnen
-    for start, end, color in color_zones:
-        ax.axvspan(start, end, color=color, alpha=0.6)
-    # Balken für aktuellen Wert
-    ax.barh([0], [val - lo], left=lo, height=0.35, color="#007a00")
-    # Anzeigegrenzen
-    ax.set_xlim(lo, hi)
-    ax.set_yticks([])
-    ax.set_xlabel("ml/min/kg")
-    ax.set_title("")
-    # Wertbeschriftung
-    ax.text(val, 0, f"{r['vo2_rel']:.1f}", va="center", ha="center",
-            fontsize=10, fontweight="bold", color="black")
-    # Achsenmarken
-    ax.text(lo, 0.4, f"{lo}", ha="center", fontsize=8)
-    ax.text(hi, 0.4, f"{hi}", ha="center", fontsize=8)
-    st.pyplot(fig)
+    c1, c2 = st.columns(2)
+
+    with c1:
+        st.markdown("**VLamax**")
+        fig, ax = plt.subplots(figsize=(4,2))
+        ax.barh([0], [r['vlamax']], height=0.4)
+        ax.set_xlim(0,1)
+        ax.set_yticks([])
+        ax.set_xlabel("mmol/l/s")
+        ax.text(min(max(r['vlamax'],0),1), 0, f"{r['vlamax']:.2f}", va="center", ha="center")
+        st.pyplot(fig)
+
+    with c2:
+        st.markdown("**VO₂max (ml/min/kg)**")
+        fig, ax = plt.subplots(figsize=(4, 2))
+
+        lo, hi = 45, 85
+        val = max(lo, min(hi, r['vo2_rel']))
+
+        # Farbverlauf
+        color_zones = [
+            (lo, 55, "#b3d9ff"),
+            (55, 65, "#80ffaa"),
+            (65, 75, "#ffff80"),
+            (75, 85, "#ff9966"),
+        ]
+        for start, end, color in color_zones:
+            ax.axvspan(start, end, color=color, alpha=0.6)
+
+        ax.barh([0], [val - lo], left=lo, height=0.35, color="#007a00")
+        ax.set_xlim(lo, hi)
+        ax.set_yticks([])
+        ax.set_xlabel("ml/min/kg")
+        ax.text(val, 0, f"{r['vo2_rel']:.1f}", va="center", ha="center", fontsize=10, fontweight="bold")
+        st.pyplot(fig)
+
 
     st.markdown("**FatMax & Zonen (W)**")
     fig, ax = plt.subplots(figsize=(8,1.5))
