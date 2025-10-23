@@ -214,30 +214,38 @@ else:
     ga1_lo, ga1_hi = r["ga1_min"], r["ga1_max"]
     ga2_lo, ga2_hi = ga1_hi, 0.9 * cp
 
-    # --- X-Achse: 0–110 % CP ---
+# Leistungsskala
     x = np.linspace(0, cp * 1.1, 400)
 
-    # --- Fettstoffwechsel (grün): steilerer Abfall nach FatMax ---
-    # Modell: ansteigend bis FatMax, dann exponentiell abfallend
-    y_fat = np.exp(-((x - fatmax) / (0.10 * cp)) ** 2.2)  # enger & steiler
+# --- Fettstoffwechsel (grün): starker Peak bei FatMax, schneller Abfall ---
+    y_fat = np.exp(-((x - fatmax) / (0.09 * cp)) ** 2.3)
     y_fat = y_fat / y_fat.max() * 100
 
-    # --- Kohlenhydratverbrauch (rot): komplementär steigend ---
+# --- Kohlenhydratstoffwechsel (rot): spiegelverkehrt steigend ---
     y_carb = 100 - y_fat
 
-    # --- Zonenhintergrund (GA1 / GA2) ---
+# --- Crossover-Punkt berechnen ---
+    cross_idx = np.argmin(np.abs(y_fat - y_carb))
+    cross_x = x[cross_idx]
+    cross_y = y_fat[cross_idx]
+
+# --- Zonen-Hintergrund ---
     ax.axvspan(ga1_lo, ga1_hi, color="#b3ffb3", alpha=0.4, label="GA1 (Fettstoffwechsel)")
     ax.axvspan(ga2_lo, ga2_hi, color="#ffff99", alpha=0.4, label="GA2 (Übergang)")
 
-    # --- Kurven zeichnen ---
+# --- Kurven zeichnen ---
     ax.plot(x, y_fat, color="#007a00", linewidth=2.5, label="Fettstoffwechsel")
     ax.plot(x, y_carb, color="#cc0000", linewidth=2.0, linestyle="--", label="Kohlenhydratstoffwechsel")
 
-    # --- FatMax-Linie ---
-    ax.axvline(fatmax, color="#004d00", linestyle="--", linewidth=1.5)
+# --- FatMax-Linie ---
+    ax.axvline(fatmax, color="#004d00", linestyle="--", linewidth=1.3)
     ax.text(fatmax, 103, f"FatMax = {fatmax:.0f} W", ha="center", fontsize=9, color="#004d00")
 
-    # --- Layout & Achsen ---
+# --- Crossover-Punkt markieren ---
+    ax.scatter(cross_x, cross_y, color="black", s=30, zorder=5)
+    ax.text(cross_x, cross_y + 5, f"Crossover ≈ {cross_x:.0f} W", ha="center", fontsize=8, color="black")
+
+# --- Layout ---
     ax.set_xlim(0, cp * 1.1)
     ax.set_ylim(0, 110)
     ax.set_xlabel("Leistung (W)")
@@ -247,6 +255,7 @@ else:
     ax.legend(loc="upper right", fontsize=8)
 
     st.pyplot(fig)
+
 
 #   st.subheader("📈 Critical Power Kurve")
 #   t_pts = np.array([t for t,_ in r['pts']], dtype=float) if r['pts'] else np.array([])
