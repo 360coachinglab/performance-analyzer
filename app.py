@@ -209,49 +209,49 @@ else:
     st.markdown("**FatMax & Zonen (W)**")
     fig, ax = plt.subplots(figsize=(8, 4))
 
-    cp = r["cp"]
-    fatmax = r["fatmax_w"]
-    vlamax = r["vlamax"]
-    ga1_lo, ga1_hi = r["ga1_min"], r["ga1_max"]
+# --- sichere Parameter ---
+    cp = r.get("cp", 300)
+    fatmax = r.get("fatmax_w", 0.65 * cp)
+    vlamax = r.get("vlamax", 0.5)
+    ga1_lo = r.get("ga1_min", 0.55 * cp)
+    ga1_hi = r.get("ga1_max", 0.75 * cp)
     ga2_lo, ga2_hi = ga1_hi, 0.9 * cp
 
 # Leistungsskala
     x = np.linspace(0, cp * 1.1, 400)
 
-# --- VLamax-Einfluss auf Steilheit: hohe VLamax -> stärkerer Abfall ---
-    steepness = 2.0 + (vlamax - 0.4) * 3.5     # Wertebereich ca. 0.2–1.0 → ~0.6–4.0
-    width_factor = 0.10 + (0.5 - vlamax) * 0.04  # höhere VLamax → schmalere Kurve
+# --- Dynamische Formparameter ---
+    steepness = max(1.5, 2.0 + (vlamax - 0.4) * 3.5)      # 1.5–4.5
+    width_factor = max(0.05, 0.10 + (0.5 - vlamax) * 0.04) # 0.05–0.12
 
-# --- Fettstoffwechsel (grün) ---
-# links vom FatMax leicht ansteigend, danach starker Abfall (abhängig von VLamax)
+# --- Fettstoffwechselkurve ---
     y_fat = np.exp(-((x - fatmax) / (width_factor * cp)) ** steepness)
-    y_fat = np.clip(y_fat / y_fat.max() * 100, 0, 100)
+    y_fat = (y_fat / y_fat.max()) * 100  # normiert auf 0–100 %
 
-# --- Kohlenhydratstoffwechsel (rot): Gegenkurve ---
+# --- Kohlenhydratstoffwechselkurve ---
     y_carb = 100 - y_fat
 
-# --- Crossover-Punkt (wo Fett = KH) ---
+# --- Crossover berechnen ---
     cross_idx = np.argmin(np.abs(y_fat - y_carb))
-    cross_x = x[cross_idx]
-    cross_y = y_fat[cross_idx]
+    cross_x, cross_y = x[cross_idx], y_fat[cross_idx]
 
-# --- Zonenhintergrund ---
+# --- Hintergrundzonen ---
     ax.axvspan(ga1_lo, ga1_hi, color="#b3ffb3", alpha=0.35, label="GA1 (Fettstoffwechsel)")
     ax.axvspan(ga2_lo, ga2_hi, color="#ffff99", alpha=0.35, label="GA2 (Übergang)")
 
 # --- Kurven zeichnen ---
-    ax.plot(x, y_fat, color="#007a00", linewidth=2.4, label="Fettstoffwechsel")
+    ax.plot(x, y_fat, color="#007a00", linewidth=2.5, label="Fettstoffwechsel")
     ax.plot(x, y_carb, color="#cc0000", linewidth=2.0, linestyle="--", label="Kohlenhydratstoffwechsel")
 
-# --- FatMax-Markierung ---
+# --- FatMax-Linie ---
     ax.axvline(fatmax, color="#004d00", linestyle="--", linewidth=1.3)
     ax.text(fatmax, 103, f"FatMax = {fatmax:.0f} W", ha="center", fontsize=9, color="#004d00")
 
-# --- Crossover-Punkt anzeigen ---
+# --- Crossover-Punkt ---
     ax.scatter(cross_x, cross_y, color="black", s=30, zorder=5)
     ax.text(cross_x, cross_y + 5, f"Crossover ≈ {cross_x:.0f} W", ha="center", fontsize=8, color="black")
 
-# --- Layout ---
+# --- Achsen & Layout ---
     ax.set_xlim(0, cp * 1.1)
     ax.set_ylim(0, 110)
     ax.set_xlabel("Leistung (W)")
@@ -261,7 +261,6 @@ else:
     ax.legend(loc="upper right", fontsize=8)
 
     st.pyplot(fig)
-
 
 
 #   st.subheader("📈 Critical Power Kurve")
