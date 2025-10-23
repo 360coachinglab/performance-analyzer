@@ -279,77 +279,76 @@ else:
 
 
 
-import numpy as np
-import matplotlib.pyplot as plt
-import streamlit as st
 
-st.markdown("**FatMax & Zonen (W) – Diagnoseversion**")
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import streamlit as st
+
+    st.markdown("**FatMax & Zonen (W)**")
+    fig, ax = plt.subplots(figsize=(8, 4))
 
 # --- Werte aus Analyse ---
-cp = float(r.get("cp", 0))
-fatmax = float(r.get("fatmax_w", 0))
-vlamax = float(r.get("vlamax", 0))
-ga1_lo = float(r.get("ga1_min", 0))
-ga1_hi = float(r.get("ga1_max", 0))
-ga2_lo, ga2_hi = ga1_hi, 0.9 * cp
+    cp = float(r.get("cp", 300))
+    fatmax = float(r.get("fatmax_w", 0.65 * cp))
+    vlamax = float(r.get("vlamax", 0.5))
+    ga1_lo = float(r.get("ga1_min", 0.55 * cp))
+    ga1_hi = float(r.get("ga1_max", 0.75 * cp))
+    ga2_lo, ga2_hi = ga1_hi, 0.9 * cp
 
-# --- Debug-Ausgabe ---
-st.write({
-    "cp": cp, 
-    "fatmax_w": fatmax, 
-    "vlamax": vlamax, 
-    "ga1_lo": ga1_lo, 
-    "ga1_hi": ga1_hi,
-    "ga2_lo": ga2_lo, 
-    "ga2_hi": ga2_hi
-})
-
-if cp <= 0:
-    st.warning("⚠️ Kein gültiger CP – keine Kurve berechenbar.")
-else:
-    fig, ax = plt.subplots(figsize=(8, 4))
+# --- Leistungsskala ---
     x = np.linspace(0.01, cp * 1.1, 400)
 
-    steepness = 2.0 + (vlamax - 0.4) * 3.0
-    width_factor = 0.10 + (0.5 - vlamax) * 0.03
-    st.write({"steepness": steepness, "width_factor": width_factor})
+# --- VLamax-Einfluss auf Kurvenform ---
+    steepness = 2.0 + (vlamax - 0.4) * 3.0     # 1.8–4.0
+    steepness = np.clip(steepness, 1.8, 4.0)
+    width_factor = 0.10 + (0.5 - vlamax) * 0.03  # 0.06–0.12
+    width_factor = np.clip(width_factor, 0.06, 0.12)
 
-    # --- Fettstoffwechsel ---
-    try:
-        y_fat = np.exp(-((np.abs(x - fatmax)) / (width_factor * cp)) ** steepness)
-        y_fat = (y_fat / np.nanmax(y_fat)) * 100
-    except Exception as e:
-        st.error(f"Fehler bei Fettkurve: {e}")
-        y_fat = np.zeros_like(x)
-
-    # --- Kohlenhydrate ---
-    y_carb = 100 - y_fat
-
-    st.write({
-        "y_fat min/max": (float(np.nanmin(y_fat)), float(np.nanmax(y_fat))),
-        "erste 5 Punkte": y_fat[:5].tolist()
-    })
-
-# Links vom FatMax weniger steil, rechts steiler (physiologisch realistischer)
-    left_width = width_factor * 1.6     # breiterer Anstieg
-    right_width = width_factor * 0.7    # steilerer Abfall
+# --- Asymmetrische Fettstoffwechsel-Kurve ---
+    left_width = width_factor * 1.6     # sanfter Anstieg
+    right_width = width_factor * 0.7    # steiler Abfall
     y_fat = np.where(
         x < fatmax,
         np.exp(-((fatmax - x) / (left_width * cp)) ** steepness),
         np.exp(-((x - fatmax) / (right_width * cp)) ** (steepness * 1.2))
     )
+    y_fat = (y_fat / np.nanmax(y_fat)) * 100  # normiert auf 0–100 %
 
+# --- Kohlenhydratstoffwechsel (rote Gegenkurve) ---
+    y_carb = 100 - y_fat
 
+# --- Crossover-Punkt berechnen ---
+    cross_idx = np.argmin(np.abs(y_fat - y_carb))
+    cross_x, cross_y = x[cross_idx], y_fat[cross_idx]
 
-    # --- Plot ---
-    ax.plot(x, y_fat, color="green", label="Fettstoffwechsel")
-    ax.plot(x, y_carb, color="red", linestyle="--", label="Kohlenhydrate")
+# --- Hintergrundzonen ---
+    ax.axvspan(ga1_lo, ga1_hi, color="#b3ffb3", alpha=0.35, label="GA1 (Fettstoffwechsel)")
+    ax.axvspan(ga2_lo, ga2_hi, color="#ffff99", alpha=0.35, label="GA2 (Übergang)")
 
+# --- Kurven zeichnen ---
+    ax.plot(x, y_fat, color="#007a00", linewidth=2.5, label="Fettstoffwechsel")
+    ax.plot(x, y_carb, color="#cc0000", linewidth=2.0, linestyle="--", label="Kohlenhydratstoffwechsel")
+
+# --- FatMax-Linie ---
+    ax.axvline(fatmax, color="#004d00", linestyle="--", linewidth=1.3)
+    ax.text(fatmax, 104, f"FatMax = {fatmax:.0f} W", ha="center", fontsize=9, color="#004d00")
+
+# --- Crossover-Punkt ---
+    ax.scatter(cross_x, cross_y, color="black", s=30, zorder=5)
+    ax.text(cross_x, cross_y + 6, f"Crossover ≈ {cross_x:.0f} W", ha="center", fontsize=8, color="black")
+
+# --- Achsen & Layout ---
     ax.set_xlim(0, cp * 1.1)
     ax.set_ylim(0, 110)
-    ax.legend()
+    ax.set_xlabel("Leistung (W)")
+    ax.set_ylabel("Substratanteil (% vom Maximum)")
+    ax.set_title("Substratverwendung in Abhängigkeit der Leistung")
     ax.grid(alpha=0.3)
+    ax.legend(loc="upper right", fontsize=8)
+
     st.pyplot(fig)
+
 
 
 
