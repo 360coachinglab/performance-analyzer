@@ -316,7 +316,7 @@ else:
 
     # --- Fettstoffwechsel ---
     try:
-        y_fat = np.exp(-((x - fatmax) / (width_factor * cp)) ** steepness)
+        y_fat = np.exp(-((np.abs(x - fatmax)) / (width_factor * cp)) ** steepness)
         y_fat = (y_fat / np.nanmax(y_fat)) * 100
     except Exception as e:
         st.error(f"Fehler bei Fettkurve: {e}")
@@ -329,6 +329,17 @@ else:
         "y_fat min/max": (float(np.nanmin(y_fat)), float(np.nanmax(y_fat))),
         "erste 5 Punkte": y_fat[:5].tolist()
     })
+
+# Links vom FatMax weniger steil, rechts steiler (physiologisch realistischer)
+    left_width = width_factor * 1.6     # breiterer Anstieg
+    right_width = width_factor * 0.7    # steilerer Abfall
+    y_fat = np.where(
+        x < fatmax,
+        np.exp(-((fatmax - x) / (left_width * cp)) ** steepness),
+        np.exp(-((x - fatmax) / (right_width * cp)) ** (steepness * 1.2))
+    )
+
+
 
     # --- Plot ---
     ax.plot(x, y_fat, color="green", label="Fettstoffwechsel")
