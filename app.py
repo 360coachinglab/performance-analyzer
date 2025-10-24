@@ -359,6 +359,22 @@ fig, ax1 = plt.subplots(figsize=(8, 5))
 # ---------------------------
 # Grundparameter
 # ---------------------------
+
+
+# --- Check if results exist ---
+if "results" in st.session_state and st.session_state["results"] is not None:
+    r = st.session_state["results"]
+
+    # deine bisherigen Berechnungen und Grafiken:
+    cp      = float(r.get("cp", 280))
+    fatmax  = float(r.get("fatmax_w", 0.65 * cp))
+    vlamax  = float(r.get("vlamax", 0.5))
+    ...
+else:
+    st.info("Bitte zuerst eine Analyse durchführen, um die Ergebnisse anzuzeigen.")
+
+
+
 cp = float(r.get("cp", 280))
 fatmax = float(r.get("fatmax_w", 0.65 * cp))
 vlamax = float(r.get("vlamax", 0.5))
