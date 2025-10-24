@@ -206,75 +206,98 @@ else:
         st.pyplot(fig)
 
 
-    st.markdown("**FatMax & Zonen (W)**")
-    fig, ax = plt.subplots(figsize=(8, 4))
 
-# --- sichere Parameter ---
-    cp = r.get("cp", 300)
-    fatmax = r.get("fatmax_w", 0.65 * cp)
-    vlamax = r.get("vlamax", 0.5)
-    ga1_lo = r.get("ga1_min", 0.55 * cp)
-    ga1_hi = r.get("ga1_max", 0.75 * cp)
-    ga2_lo, ga2_hi = ga1_hi, 0.9 * cp
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+import streamlit as st
+
+    st.markdown("**Fett- & Kohlenhydratverbrennung (kcal/h & g/h)**")
+    fig, ax1 = plt.subplots(figsize=(8, 5))
+
+# ---------------------------
+# Grundparameter
+# ---------------------------
+    cp = float(r.get("cp", 280))
+    fatmax = float(r.get("fatmax_w", 0.65 * cp))
+    vlamax = float(r.get("vlamax", 0.5))
+    ga1_lo = float(r.get("ga1_min", 0.55 * cp))
+    ga1_hi = float(r.get("ga1_max", 0.75 * cp))
 
 # Leistungsskala
-    x = np.linspace(0, cp * 1.1, 400)
+    x = np.linspace(50, cp * 1.2, 400)  # W
 
-# --- Dynamische Formparameter ---
-    steepness = max(1.5, 2.0 + (vlamax - 0.4) * 3.5)      # 1.5–4.5
-    width_factor = max(0.05, 0.10 + (0.5 - vlamax) * 0.04) # 0.05–0.12
+# ---------------------------
+# Modellierte Substratverteilung
+# ---------------------------
 
-# --- Fettstoffwechselkurve ---
-    y_fat = np.exp(-((x - fatmax) / (width_factor * cp)) ** steepness)
-    y_fat = (y_fat / y_fat.max()) * 100  # normiert auf 0–100 %
+# Fettverbrennung: Peak bei FatMax, danach starker Abfall (abhängig von VLamax)
+    steepness = np.clip(2.0 + (vlamax - 0.4) * 3.0, 1.8, 4.0)
+    width_factor = np.clip(0.1 + (0.5 - vlamax) * 0.03, 0.06, 0.12)
 
-# --- Kohlenhydratstoffwechselkurve ---
-    y_carb = 100 - y_fat
+    left_width = width_factor * 1.6
+    right_width = width_factor * 0.7
 
-# --- Crossover berechnen ---
-    cross_idx = np.argmin(np.abs(y_fat - y_carb))
-    cross_x, cross_y = x[cross_idx], y_fat[cross_idx]
+    y_fat_rel = np.where(
+        x < fatmax,
+        np.exp(-((fatmax - x) / (left_width * cp)) ** steepness),
+        np.exp(-((x - fatmax) / (right_width * cp)) ** (steepness * 1.2))
+    )
+    y_fat_rel = y_fat_rel / np.nanmax(y_fat_rel)  # 0–1 normiert
 
-# --- Hintergrundzonen ---
-    ax.axvspan(ga1_lo, ga1_hi, color="#b3ffb3", alpha=0.35, label="GA1 (Fettstoffwechsel)")
-    ax.axvspan(ga2_lo, ga2_hi, color="#ffff99", alpha=0.35, label="GA2 (Übergang)")
+# Gesamtenergieumsatz: ca. 3.6 kcal pro Watt pro Stunde
+    total_kcal = x * 3.6
 
-# --- Kurven zeichnen ---
-    ax.plot(x, y_fat, color="#007a00", linewidth=2.5, label="Fettstoffwechsel")
-    ax.plot(x, y_carb, color="#cc0000", linewidth=2.0, linestyle="--", label="Kohlenhydratstoffwechsel")
+# Fett- und KH-Anteile in kcal/h
+    fat_kcal = total_kcal * y_fat_rel
+    carb_kcal = total_kcal - fat_kcal
 
-# --- FatMax-Linie ---
-    ax.axvline(fatmax, color="#004d00", linestyle="--", linewidth=1.3)
-    ax.text(fatmax, 103, f"FatMax = {fatmax:.0f} W", ha="center", fontsize=9, color="#004d00")
+# ---------------------------
+# Kurven zeichnen (linke Achse = kcal/h)
+# ---------------------------
+    ax1.plot(x, fat_kcal, color="#006600", linewidth=2.5, label="Fett (kcal/h)")
+    ax1.plot(x, carb_kcal, color="#cc3300", linewidth=2.5, label="Kohlenhydrate (kcal/h)")
+    ax1.fill_between(x, 0, fat_kcal, color="#00cc66", alpha=0.1)
+    ax1.fill_between(x, 0, carb_kcal, color="#ff9966", alpha=0.1)
 
-# --- Crossover-Punkt ---
-    ax.scatter(cross_x, cross_y, color="black", s=30, zorder=5)
-    ax.text(cross_x, cross_y + 5, f"Crossover ≈ {cross_x:.0f} W", ha="center", fontsize=8, color="black")
+# FatMax-Zone
+    ax1.axvspan(ga1_lo, ga1_hi, color="#b3ffb3", alpha=0.4, label="FatMax-Zone")
+    ax1.axvline(fatmax, color="#004d00", linestyle="--", linewidth=1.3)
+    ax1.text(fatmax, np.max(fat_kcal)*1.02, f"FatMax = {fatmax:.0f} W",
+            ha="center", fontsize=9, color="#004d00")
 
-# --- Achsen & Layout ---
-    ax.set_xlim(0, cp * 1.1)
-    ax.set_ylim(0, 110)
-    ax.set_xlabel("Leistung (W)")
-    ax.set_ylabel("Substratanteil (% vom Maximum)")
-    ax.set_title("Substratverwendung in Abhängigkeit der Leistung")
-    ax.grid(alpha=0.3)
-    ax.legend(loc="upper right", fontsize=8)
+# ---------------------------
+# Rechte Achse: g/h
+# ---------------------------
+    ax2 = ax1.twinx()
+    ax2.set_ylabel("g/h")
+
+# Umrechnungsfaktoren:
+# 1 g Fett ≈ 9.4 kcal, 1 g KH ≈ 4.2 kcal
+    fat_gph = fat_kcal / 9.4
+    carb_gph = carb_kcal / 4.2
+
+    ax2.plot(x, fat_gph, color="#006600", alpha=0.0)  # unsichtbar, Achsenskalierung übernehmen
+    ax2.plot(x, carb_gph, color="#cc3300", alpha=0.0)
+
+# Max. Carb-Intake-Bereich (90–120 g/h)
+    ax2.axhspan(90, 120, color="#ffcc99", alpha=0.4, label="Max. KH-Aufnahme")
+
+# ---------------------------
+# Layout
+# ---------------------------
+    ax1.set_xlim(50, cp * 1.2)
+    ax1.set_ylim(0, np.max(total_kcal) * 1.1)
+    ax1.set_xlabel("Leistung (Watt)")
+    ax1.set_ylabel("Energieumsatz (kcal/h)")
+    ax1.set_title("Fat & carbohydrate combustion")
+    ax1.grid(alpha=0.3)
+    ax1.legend(loc="upper left", fontsize=8)
+    ax2.legend(loc="upper right", fontsize=8)
 
     st.pyplot(fig)
 
-#   st.subheader("📈 Critical Power Kurve")
-#   t_pts = np.array([t for t,_ in r['pts']], dtype=float) if r['pts'] else np.array([])
-#   p_pts = np.array([p for _,p in r['pts']], dtype=float) if r['pts'] else np.array([])
-#   fig, ax = plt.subplots()
-#   t_curve = np.linspace(15, 1200, 200)
-#   p_curve = r['cp'] + (r['w_prime'] / t_curve)
-#   ax.plot(t_curve, p_curve, label="CP-Modell")
-#   if r['pts']:
-#   ax.scatter(t_pts, p_pts, label="Messpunkte")
-#   ax.set_xscale("log")
-#   ax.set_xlabel("Dauer (s) (log)"); ax.set_ylabel("Leistung (W)")
-#   ax.legend()
-#   st.pyplot(fig)
 
 
 
