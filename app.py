@@ -5,6 +5,12 @@ import numpy as np
 from datetime import date
 from tabulate import tabulate
 
+# --- Sicherstellen, dass Ergebnisse existieren ---
+if "results" in st.session_state and st.session_state["results"] is not None:
+    r = st.session_state["results"]
+else:
+    r = {}  # leeres Dictionary, damit .get() funktioniert
+
 #from calculations.critical_power import calc_critical_power
 from calculations.critical_power import calc_critical_power, corrected_ftp
 from calculations.vo2max import calc_vo2max
@@ -121,15 +127,17 @@ if submitted:
 
 
 
-# --- Globaler Check, ob Ergebnisse vorhanden sind ---
-if "results" in st.session_state and st.session_state["results"] is not None:
-    r = st.session_state["results"]
-else:
-    r = {}  # leeres Dictionary, verhindert NameError
-
-
-
 # ---------- show results if available ----------
+
+if not r:
+    st.info("Bitte zuerst eine Analyse durchführen, um Ergebnisse anzuzeigen.")
+else:
+    # hier dein Code mit cp, fatmax, etc.
+
+
+
+
+
 if "results" in st.session_state:
     athlete_name_val = st.session_state.get("athlete_name_val", "")
     r = st.session_state["results"]
