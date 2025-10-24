@@ -376,94 +376,80 @@ st.pyplot(fig)
 
 
 
-# --- Fett- & Kohlenhydratverbrennung (kcal/h & g/h) ---
-st.markdown("**Fat & carbohydrate combustion**")
+st.markdown("**Fat & carbohydrate combustion (physiologisch korrekt)**")
 fig, ax1 = plt.subplots(figsize=(8, 5))
 
 # ---------------------------
-# Grundparameter
+# Basisparameter
 # ---------------------------
-cp = float(r.get("cp", 280))
-fatmax = float(r.get("fatmax_w", 0.65 * cp))
-vlamax = float(r.get("vlamax", 0.5))
-ga1_lo = float(r.get("ga1_min", 0.55 * cp))
-ga1_hi = float(r.get("ga1_max", 0.75 * cp))
+cp      = float(r.get("cp", 280))
+fatmax  = float(r.get("fatmax_w", 0.65 * cp))
+vlamax  = float(r.get("vlamax", 0.5))
+ga1_lo  = float(r.get("ga1_min", 0.55 * cp))
+ga1_hi  = float(r.get("ga1_max", 0.75 * cp))
 
 # Leistungsskala (W)
-x = np.linspace(50, cp * 1.5, 400)
+x = np.linspace(50, cp * 1.4, 400)
 
 # ---------------------------
 # Gesamtenergie (kcal/h)
-# Näherung: 3.6 kcal/W/h (ergometrische Faustformel)
 # ---------------------------
 total_kcal = x * 3.6
 
 # ---------------------------
-# Fettanteil (%)
-# Glockenkurve: Anstieg bis FatMax, dann Abfall.
-# Einfluss VLamax -> flachere oder steilere Kurve
+# Fettanteil-Form: ansteigend bis FatMax, dann exponentiell abfallend gegen 0 bei CP
 # ---------------------------
-steepness = np.clip(1.6 + 2.5 * (vlamax - 0.4), 1.4, 3.2)
-sigma = np.clip(0.25 * cp, 0.15 * cp, 0.35 * cp)
-peak = np.clip(0.7 - 0.3 * (vlamax - 0.3), 0.3, 0.75)  # max. Fettanteil
+# Parametersteuerung über VLamax (hohe VLamax → steiler Abfall)
+sharp = np.clip(6 + 6*(vlamax-0.4), 4, 10)
 
-fat_frac = peak * np.exp(-((x - fatmax) ** 2) / (2 * sigma**2))
-fat_frac = np.clip(fat_frac, 0, 1)
-
-# ---------------------------
-# Kohlenhydratanteil (%)
-# exponentiell steigend mit der Leistung
-# ---------------------------
-carb_frac = 1 - fat_frac
+fat_frac = np.exp(-((x - fatmax)/(0.22*cp))**sharp)
+fat_frac[x < 0.3*cp] *= (x[x < 0.3*cp]/(0.3*cp))**0.5  # sanfter Anstieg am Anfang
+fat_frac[x > cp] = 0.0                                 # oberhalb CP keine Fettverbrennung
+fat_frac = fat_frac / np.nanmax(fat_frac) * 0.7        # max 70 % Anteil
 
 # ---------------------------
-# Fett- & KH-Verbrauch (kcal/h)
+# kcal/h je Substrat
 # ---------------------------
-fat_kcal = total_kcal * fat_frac
-carb_kcal = total_kcal * carb_frac
+fat_kcal  = total_kcal * fat_frac
+carb_kcal = total_kcal - fat_kcal                      # => monoton steigend
 
 # ---------------------------
-# Plot: linke Achse kcal/h
+# Plot linke Achse kcal/h
 # ---------------------------
-ax1.plot(x, fat_kcal, color="#006600", linewidth=2.5, label="fat")
-ax1.plot(x, carb_kcal, color="#cc3300", linewidth=2.5, label="carbohydrate")
-ax1.fill_between(x, 0, fat_kcal, color="#00cc66", alpha=0.15)
+ax1.plot(x, fat_kcal,  color="#007a00", linewidth=2.5, label="Fett (kcal/h)")
+ax1.plot(x, carb_kcal, color="#cc3300", linewidth=2.5, label="Kohlenhydrate (kcal/h)")
+ax1.fill_between(x, 0, fat_kcal,  color="#00cc66", alpha=0.15)
 ax1.fill_between(x, 0, carb_kcal, color="#ff9966", alpha=0.12)
 
 # FatMax-Zone
-ax1.axvspan(ga1_lo, ga1_hi, color="#b3ffb3", alpha=0.35, label="FatMax zone")
+ax1.axvspan(ga1_lo, ga1_hi, color="#b3ffb3", alpha=0.35, label="FatMax-Zone")
 ax1.axvline(fatmax, color="#004d00", linestyle="--", linewidth=1.2)
 ax1.text(fatmax, np.max(fat_kcal)*1.03, f"FatMax = {fatmax:.0f} W",
          ha="center", fontsize=9, color="#004d00")
 
 # ---------------------------
-# Rechte Achse: g/h
+# Rechte Achse g/h
 # ---------------------------
 ax2 = ax1.twinx()
 ax2.set_ylabel("g/h")
-
-# Umrechnung
-fat_gph = fat_kcal / 9.4
+fat_gph  = fat_kcal  / 9.4
 carb_gph = carb_kcal / 4.2
-
-# Max. KH-Aufnahme-Bereich
-ax2.axhspan(90, 120, color="#ffcc99", alpha=0.35, label="max. carb. intake")
+ax2.axhspan(90, 120, color="#ffcc99", alpha=0.35, label="max. KH-Aufnahme")
 
 # ---------------------------
-# Layout & Styling
+# Layout
 # ---------------------------
 ax1.set_xlim(x.min(), x.max())
-ax1.set_ylim(0, np.max(total_kcal) * 1.1)
-ax1.set_xlabel("watt")
-ax1.set_ylabel("kcal/h")
+ax1.set_ylim(0, np.max(total_kcal)*1.1)
+ax1.set_xlabel("Leistung (W)")
+ax1.set_ylabel("Energieumsatz (kcal/h)")
 ax1.set_title("Fat & carbohydrate combustion")
 ax1.grid(alpha=0.3)
-
-# Legenden
 ax1.legend(loc="upper left", fontsize=8)
 ax2.legend(loc="upper right", fontsize=8)
 
 st.pyplot(fig)
+
 
 
 
