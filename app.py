@@ -15,6 +15,9 @@ from calculations.zones import calc_zones, calc_ga1_zone
 from utils.athlete_type import determine_athlete_type
 from pdf_export import create_analysis_pdf_bytes
 
+
+
+
 st.set_page_config(page_title="Performance Analyzer", page_icon="🚴", layout="wide")
 st.sidebar.markdown("**Version:** 1.9.9e4 (Neutral • SessionState + Dynamic Zones + PDF in-memory)**")
 
@@ -114,6 +117,17 @@ if submitted:
         st.session_state["athlete_name_val"] = st.session_state["athlete_name"]
         st.session_state["results"] = compute_analysis(inputs)
         st.success("Analyse berechnet – siehe unten.")
+
+
+
+
+# --- Globaler Check, ob Ergebnisse vorhanden sind ---
+if "results" in st.session_state and st.session_state["results"] is not None:
+    r = st.session_state["results"]
+else:
+    r = {}  # leeres Dictionary, verhindert NameError
+
+
 
 # ---------- show results if available ----------
 if "results" in st.session_state:
@@ -359,8 +373,6 @@ fig, ax1 = plt.subplots(figsize=(8, 5))
 # ---------------------------
 # Grundparameter
 # ---------------------------
-
-
 # --- Check if results exist ---
 if "results" in st.session_state and st.session_state["results"] is not None:
     r = st.session_state["results"]
