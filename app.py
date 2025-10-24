@@ -303,12 +303,12 @@ st.pyplot(fig)
 
 
 
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import streamlit as st
+import numpy as np
+import matplotlib.pyplot as plt
+import streamlit as st
 
-    st.markdown("**FatMax & Zonen (W)**")
-    fig, ax = plt.subplots(figsize=(8, 4))
+st.markdown("**FatMax & Zonen (W)**")
+fig, ax = plt.subplots(figsize=(8, 4))
 
 # --- Werte aus Analyse ---
     cp = float(r.get("cp", 300))
