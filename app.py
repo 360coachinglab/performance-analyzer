@@ -213,8 +213,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import streamlit as st
 
-    st.markdown("**Fett- & Kohlenhydratverbrennung (kcal/h & g/h)**")
-    fig, ax1 = plt.subplots(figsize=(8, 5))
+st.markdown("**Fett- & Kohlenhydratverbrennung (kcal/h & g/h)**")
+fig, ax1 = plt.subplots(figsize=(8, 5))
 
 # ---------------------------
 # Grundparameter
