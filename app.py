@@ -376,63 +376,63 @@ st.pyplot(fig)
 
 
 
-    st.subheader("📈 Critical Power Kurve")
+st.subheader("📈 Critical Power Kurve")
 
-    pts = r["pts"]  # reale Datenpunkte
-    if pts:
-        t_pts = np.array([t for t, _ in pts], dtype=float)
-        p_pts = np.array([p for _, p in pts], dtype=float)
+pts = r["pts"]  # reale Datenpunkte
+if pts:
+    t_pts = np.array([t for t, _ in pts], dtype=float)
+    p_pts = np.array([p for _, p in pts], dtype=float)
 
-        fig, ax = plt.subplots(figsize=(7, 4))
+    fig, ax = plt.subplots(figsize=(7, 4))
 
         # Modellierte Kurve (1/t-Beziehung)
-        t_curve = np.linspace(10, 1200, 300)
-        p_curve = r["cp"] + (r["w_prime"] / t_curve)
+    t_curve = np.linspace(10, 1200, 300)
+    p_curve = r["cp"] + (r["w_prime"] / t_curve)
 
         # --- Farbige Hintergrundzonen (auf Basis der CP-Zonen) ---
-        cp = r["cp"]
-        z_colors = [
-            (0, 0.55 * cp, "#b3d9ff", "Z1"),       # blau, locker
-            (0.55 * cp, 0.75 * cp, "#c2f0c2", "Z2"), # grün, Fettstoffwechsel
-            (0.75 * cp, 0.90 * cp, "#ffffb3", "Z3"), # gelb, Übergang
-            (0.90 * cp, 1.05 * cp, "#ffd699", "Z4"), # orange, Schwelle
-            (1.05 * cp, 1.25 * cp, "#ff9999", "Z5"), # rot, VO2max
-        ]
-        for (low, high, color, label) in z_colors:
-            ax.axhspan(low, high, color=color, alpha=0.3, label=label)
+    cp = r["cp"]
+    z_colors = [
+        (0, 0.55 * cp, "#b3d9ff", "Z1"),       # blau, locker
+        (0.55 * cp, 0.75 * cp, "#c2f0c2", "Z2"), # grün, Fettstoffwechsel
+        (0.75 * cp, 0.90 * cp, "#ffffb3", "Z3"), # gelb, Übergang
+        (0.90 * cp, 1.05 * cp, "#ffd699", "Z4"), # orange, Schwelle
+        (1.05 * cp, 1.25 * cp, "#ff9999", "Z5"), # rot, VO2max
+    ]
+    for (low, high, color, label) in z_colors:
+        ax.axhspan(low, high, color=color, alpha=0.3, label=label)
 
         # Reale Messpunkte
-        ax.scatter(t_pts, p_pts, color="blue", label="Testdaten", zorder=4, s=40)
+    ax.scatter(t_pts, p_pts, color="blue", label="Testdaten", zorder=4, s=40)
 
         # Modellierte Kurve
-        ax.plot(t_curve, p_curve, color="red", linewidth=2.2, label="CP-Modell", zorder=3)
+    ax.plot(t_curve, p_curve, color="red", linewidth=2.2, label="CP-Modell", zorder=3)
 
         # CP-Linie
-        ax.axhline(cp, color="gray", linestyle="--", linewidth=1)
-        ax.text(t_curve[-1], cp + 5, f"CP = {cp:.0f} W", va="bottom", ha="right", fontsize=9, color="gray")
+    ax.axhline(cp, color="gray", linestyle="--", linewidth=1)
+    ax.text(t_curve[-1], cp + 5, f"CP = {cp:.0f} W", va="bottom", ha="right", fontsize=9, color="gray")
 
         # Achsen + Layout
         # Achse logarithmisch, aber lesbare Sekundenwerte anzeigen
-        ax.set_xscale("log")
-        ax.set_xlabel("Dauer (s)")
+    ax.set_xscale("log")
+    ax.set_xlabel("Dauer (s)")
 
         # Definierte Tick-Positionen (typische Testzeiten)
-        xticks = [20, 60, 180, 300, 600, 900, 1200]
-        ax.set_xticks(xticks)
-        ax.set_xticklabels([str(int(x)) for x in xticks])
-        ax.set_ylabel("Leistung (W)")
-        ax.set_title("Critical Power Modell mit Zonen")
-        ax.grid(True, which="both", linestyle="--", linewidth=0.5, alpha=0.7)
+    xticks = [20, 60, 180, 300, 600, 900, 1200]
+    ax.set_xticks(xticks)
+    ax.set_xticklabels([str(int(x)) for x in xticks])
+    ax.set_ylabel("Leistung (W)")
+    ax.set_title("Critical Power Modell mit Zonen")
+    ax.grid(True, which="both", linestyle="--", linewidth=0.5, alpha=0.7)
 
         # Legende schöner (nur einmal pro Zone)
-        handles, labels = ax.get_legend_handles_labels()
-        unique_labels = dict(zip(labels, handles))
-        ax.legend(unique_labels.values(), unique_labels.keys(), loc="upper right", fontsize=8)
+    handles, labels = ax.get_legend_handles_labels()
+    unique_labels = dict(zip(labels, handles))
+    ax.legend(unique_labels.values(), unique_labels.keys(), loc="upper right", fontsize=8)
 
-        st.pyplot(fig)
+    st.pyplot(fig)
 
-    else:
-        st.info("Keine ausreichenden Testpunkte für CP-Kurve vorhanden.")
+else:
+    st.info("Keine ausreichenden Testpunkte für CP-Kurve vorhanden.")
 
     # ----- Export -----
     st.subheader("📄 Export")
