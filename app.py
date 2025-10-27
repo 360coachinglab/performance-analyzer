@@ -103,45 +103,6 @@ with st.form("input_form"):
         peak20 = st.number_input("20s Peak-Leistung (W)", 300, 3000, 900, key="peak20")
 
     submitted = st.form_submit_button("Analyse starten 🚀")
-    
-
-
-if "results" not in st.session_state or st.session_state["results"] is None:
-    st.title("🚴 Performance Analyzer")
-    st.write("Willkommen im 360 Coaching Lab Analyzer. \
-              Bitte gib deine Daten ein und starte die Analyse, \
-              um deine Ergebnisse zu sehen.")
-
-
-
-# --- Nur anzeigen, wenn eine Analyse durchgeführt wurde ---
-if "results" in st.session_state and st.session_state["results"] is not None:
-    r = st.session_state["results"]
-
-    # 🔽 alles, was erst nach Analyse erscheinen soll:
-    st.subheader("🎯 Dashboard Visuals")
-
-    # Beispiel: Kennzahlen
-    c1, c2 = st.columns(2)
-    with c1:
-        st.metric("Critical Power", f"{r['cp']:.0f} W")
-        st.metric("VO₂max", f"{r['vo2_rel']:.1f} ml/kg/min")
-    with c2:
-        st.metric("VLamax", f"{r['vlamax']:.3f} mmol/l/s")
-        st.metric("FatMax", f"{r['fatmax_w']:.0f} W")
-
-    # Beispiel: Diagramme, Tabellen usw.
-    st.subheader("📊 Leistungsdiagramme")
-    # (dein weiterer Code für CP-Kurve, FatMax-Kurve, Zonen, usw.)
-
-else:
-    # Startseite ohne Analyse
-    st.info("Bitte zuerst Daten eingeben und auf **'Analyse starten 🚀'** klicken, um die Ergebnisse anzuzeigen.")
-
-
-
-
-
 
 if submitted:
     if not st.session_state["athlete_name"].strip():
