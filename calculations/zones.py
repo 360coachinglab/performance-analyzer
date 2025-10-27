@@ -35,8 +35,16 @@ def calc_zones(cp, hfmax, fatmax_w, vlamax):
     if fatmax_rel:
         if fatmax_rel < z1_upper:
             z1_upper = max(0.45, fatmax_rel - 0.01)
-        if fatmax_rel > z2_upper:
-            z2_upper = min(0.85, fatmax_rel + 0.01)
+    #    if fatmax_rel > z2_upper:
+    #        z2_upper = min(0.85, fatmax_rel + 0.01)
+
+
+
+
+
+
+
+
 
     # --- Wattbereiche (weiterhin dynamisch!) ---
     zones = [
