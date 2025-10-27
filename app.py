@@ -246,8 +246,6 @@ except Exception as e:
 
 
 ### ✅ **Codeblock: ausführliche Erklärung als Expander**
-
-```python
 # -----------------------------
 # Ergebnisse & Trainingszonen – Erklärung
 # -----------------------------
