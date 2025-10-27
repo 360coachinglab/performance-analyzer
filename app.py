@@ -240,6 +240,155 @@ try:
 except Exception as e:
     st.warning(f"Zonen konnten nicht angezeigt werden: {e}")
 
+
+
+
+
+
+### ✅ **Codeblock: ausführliche Erklärung als Expander**
+
+```python
+# -----------------------------
+# Ergebnisse & Trainingszonen – Erklärung
+# -----------------------------
+with st.expander("🧭 Ergebnisse & Trainingszonen – Erklärung (ausklappen)", expanded=False):
+    st.markdown("""
+---
+
+### **Körperfett (%)**
+Gibt an, wie viel Prozent des Körpergewichts aus Fett besteht.  
+Ein niedriger Wert verbessert die Leistungsökonomie (W/kg),  
+zu niedrige Werte können jedoch Regeneration und Hormonhaushalt beeinträchtigen.  
+Für Ausdauerathlet:innen gelten **8–14 % (Männer)** und **15–22 % (Frauen)** als optimal.
+
+---
+
+### **Critical Power (CP)**
+Die **Critical Power** ist die höchste Leistung, die über längere Zeit (20–60 min)  
+ohne fortschreitende Ermüdung gehalten werden kann.  
+Sie beschreibt die **aerobe Dauerleistungsgrenze** (≈ anaerobe Schwelle, MLSS).  
+Je höher die CP, desto besser die Ausdauerleistung.
+
+---
+
+### **W′ (W-Prime)**
+W′ repräsentiert den **anaeroben Energievorrat** oberhalb der CP.  
+Ein hoher Wert zeigt eine gute Fähigkeit für Sprints und Attacken,  
+ein niedriger Wert steht für hohe aerobe Effizienz und Ökonomie.
+
+---
+
+### **FTP (Functional Threshold Power)**
+Praxiswert für die Schwellenleistung, meist ≈ 95 % der 20-min-Leistung.  
+Sie zeigt, wie lange eine hohe Dauerleistung aufrechterhalten werden kann  
+und dient als Grundlage zur Trainingszoneneinteilung.
+
+---
+
+### **FTP (W/kg)**
+Die relative Schwellenleistung (FTP ÷ Körpergewicht)  
+ist der wichtigste Vergleichswert zwischen Athlet:innen.  
+- Freizeit: **2.0–3.0 W/kg**  
+- Ambitioniert: **3.0–4.0 W/kg**  
+- Elite: **> 5.0 W/kg**
+
+---
+
+### **VO₂max (relativ, ml/min/kg)**
+Misst die aerobe Kapazität – wie viel Sauerstoff pro Minute und kg Körpergewicht  
+verwertet werden kann.  
+- Untrainiert: 35–45  
+- Trainiert: 50–60  
+- Elite: > 70 ml/min/kg
+
+---
+
+### **VO₂max (absolut, l/min)**
+Zeigt die gesamte Sauerstoffaufnahme unabhängig vom Körpergewicht.  
+Je höher, desto besser Herz-Kreislauf-Leistung und O₂-Transportkapazität.
+
+---
+
+### **VLamax (mmol/l/s)**
+Die **maximale Laktatbildungsrate** beschreibt die anaerobe Stoffwechselaktivität.  
+- **Niedrig (0.2–0.4):** effizient, ausdauerorientiert  
+- **Hoch (0.6–1.0):** sprintstark, aber geringere Ausdauer  
+Ein optimales Verhältnis aus **VO₂max und VLamax** bestimmt die Leistungsfähigkeit.
+
+---
+
+### **FatMax (Watt)**
+Leistung, bei der die **Fettverbrennung maximal** ist – meist **60–70 % der CP**.  
+Training in diesem Bereich verbessert die aerobe Effizienz und Fettstoffwechselkapazität.
+
+---
+
+### **FatMax (% CP)**
+Zeigt, wie nah FatMax an der Schwelle liegt.  
+Ein hoher Prozentsatz bedeutet, dass auch bei höherer Intensität  
+noch effizient Fett genutzt werden kann – Zeichen einer starken aeroben Anpassung.
+
+---
+
+### **Athletentyp**
+Bestimmt aus VO₂max, VLamax und CP:
+- **Dieseltyp / Ausdauertyp:** hohe CP, niedrige VLamax → sehr effizient  
+- **Allrounder:** ausgeglichenes Profil  
+- **Sprinter / Explosivtyp:** hohe VLamax, niedrige CP → explosiv, weniger ökonomisch
+
+---
+
+## 🏁 Trainingszonen
+
+**Z1 – Regeneration**  
+Sehr lockere Belastung zur aktiven Erholung, fördert Durchblutung und Regeneration.  
+Perfekt nach intensiven Trainingstagen oder Rennen.
+
+**Z2 – Ausdauer (Fettstoffwechsel)**  
+Klassisches Grundlagentraining (GA1).  
+Maximale Fettverbrennung, Verbesserung der aeroben Kapazität und Mitochondriendichte.  
+Lange, konstante Einheiten (1.5 – 4 h).
+
+**Z3 – Tempo**  
+Übergangsbereich (GA2).  
+Leicht erhöhte Herzfrequenz, Kombination aus Fett- und Kohlenhydratstoffwechsel.  
+Ideal zur Verbesserung der Ermüdungsresistenz und Toleranz anhaltender Belastung.
+
+**Z4 – Schwelle**  
+Bereich um CP / FTP / MLSS.  
+Hohe, aber noch kontrollierte Intensität.  
+Verbessert Laktattoleranz, Dauerleistungsfähigkeit und aerobe Effizienz.
+
+**Z5 – VO₂max**  
+Sehr intensive Intervalle nahe der maximalen Sauerstoffaufnahme.  
+Trainiert Herz-Kreislauf-System und maximale Sauerstoffverwertung.  
+Kurze Belastungen (2–6 min), lange Pausen.
+
+---
+
+## 🔢 RPE-Skala (0 – 10)
+
+| RPE | Empfinden | Beschreibung |
+|:----|:-----------|:--------------|
+| 0 | Ruhe | keine Belastung |
+| 1–2 | sehr leicht | Einrollen, Erholung |
+| 3–4 | leicht – mäßig | GA1, Gespräche möglich |
+| 5 | mittel | GA2, gleichmäßige Atmung |
+| 6 | etwas hart | Übergang zu Schwelle |
+| 7 | hart | FTP-Intervalle, 10–20 min |
+| 8 | sehr hart | VO₂max-Intervalle |
+| 9 | maximal | kurze Spitzenbelastung |
+| 10 | absolut maximal | Sprint / Endbelastung |
+
+---
+""", unsafe_allow_html=True)
+
+
+
+
+
+
+
 # -----------------------------
 # Dashboard Visuals (VLamax + VO2max Gauges)
 # -----------------------------
