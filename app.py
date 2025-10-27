@@ -114,15 +114,6 @@ if "results" not in st.session_state or st.session_state["results"] is None:
 
 
 
-
-
-
-
-
-
-
-
-
 # --- Nur anzeigen, wenn eine Analyse durchgeführt wurde ---
 if "results" in st.session_state and st.session_state["results"] is not None:
     r = st.session_state["results"]
@@ -172,128 +163,16 @@ if "results" in st.session_state:
     athlete_name_val = st.session_state.get("athlete_name_val", "")
     r = st.session_state["results"]
 
-
-
-
-
-
-
-
-
-
-
-st.subheader("⚙️ Leistungskennzahlen")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.metric(
-        "Critical Power (CP)",
-        f"{r['cp']:.0f} W",
-        help="Aerobe Dauerleistungsgrenze / MLSS"
-    )
-    st.metric(
-        "W′",
-        f"{r['w_prime']:.0f} J",
-        help="Anaerober Energievorrat oberhalb der CP"
-    )
-
-with col2:
-    st.metric(
-        "Functional Threshold Power (FTP)",
-        f"{r['ftp']:.0f} W",
-        help="Praxiswert für 60-Minuten-Leistung, abhängig von VLamax"
-    )
-    st.metric(
-        "FTP (W/kg)",
-        f"{r['ftp'] / float(inputs.get('weight', 70)):.2f}",
-        help="Relativer Schwellenwert"
-    )
-
-with col3:
-    st.metric(
-        "VLamax",
-        f"{vlamax:.3f} mmol/l/s",
-        help="Maximale Laktatbildungsrate – beeinflusst FTP deutlich stärker als CP"
-    )
-
-# --- Hinweis für TrainingPeaks ---
-st.info(
-    f"""
-    💡 **Hinweis für TrainingPeaks:**  
-    Verwende für die Trainingszonen in TrainingPeaks die hier berechnete  
-    **Functional Threshold Power (FTP) = {r['ftp']:.0f} W**.  
-    Dieser Wert berücksichtigt deine VLamax und bildet deine reale 60-min-Schwelle ab.
-    """
-)
-
-
-
-
-
-
-# ============================================================
-# ⚙️ Leistungsanalyse – Critical Power, W′ & FTP
-# ============================================================
-
-from calculations.critical_power import calc_critical_power, corrected_ftp
-
-# --- Eingabedaten aus Formular / Session ---
-p1min  = float(inputs.get("p1min", 0))
-p3min  = float(inputs.get("p3min", 0))
-p5min  = float(inputs.get("p5min", 0))
-p12min = float(inputs.get("p12min", 0))
-vlamax = float(inputs.get("vlamax", 0))
-weight = float(inputs.get("weight", 70))
-
-# ============================================================
-# 🔹 1. Berechnung von CP und W′ (nur 1–12 min Tests)
-# ============================================================
-cp, w_prime = calc_critical_power(
-    p1min=p1min,
-    p3min=p3min,
-    p5min=p5min,
-    p12min=p12min
-)
-
-# ============================================================
-# 🔹 2. Berechnung der FTP (metabolisch modelliert)
-# ============================================================
-ftp = corrected_ftp(cp, vlamax)
-
-# ============================================================
-# 🔹 3. Ergebnisse speichern
-# ============================================================
-r["cp"] = cp
-r["w_prime"] = w_prime
-r["ftp"] = ftp
-
-# ============================================================
-# 🔹 4. Anzeige der Ergebnisse
-# ============================================================
-st.subheader("⚙️ Leistungskennzahlen")
-
-c1, c2, c3 = st.columns(3)
-
-with c1:
-    st.metric("Critical Power (CP)", f"{r['cp']:.0f} W", help="Aerobe Dauerleistungsgrenze (MLSS-Niveau)")
-    st.metric("W′", f"{r['w_prime']:.0f} J", help="Anaerober Energievorrat oberhalb der CP")
-
-with c2:
-    st.metric("Functional Threshold Power (FTP)", f"{r['ftp']:.0f} W", help="60-Minuten-Leistung für Trainingszonen und TrainingPeaks")
-    st.metric("FTP (W/kg)", f"{r['ftp']/weight:.2f}", help="Relativer Schwellenwert (Leistung pro kg Körpergewicht)")
-
-with c3:
-    st.metric("VLamax", f"{vlamax:.3f} mmol/l/s", help="Maximale Laktatbildungsrate – beeinflusst FTP und Trainingsschwelle")
-    st.metric("FTP / CP Verhältnis", f"{(r['ftp']/r['cp']*100):.1f} %", help="Verhältnis zeigt aerobe Stabilität (niedriger bei Sprintern)")
-
-
-
-
-
-
-
-
+    st.subheader("🔢 Leistungskennzahlen")
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("CP", f"{r['cp']:.0f} W")
+    # m2.metric("W′", f"{r['w_prime']:.0f} J")
+    m2.metric("FTP (W/kg)", f"{r['ftp_corr']/r['weight']:.2f}")
+    m3.metric("VO₂max rel.", f"{r['vo2_rel']:.1f} ml/min/kg")
+    m4.metric(f"VLaMax ({r['model_used']})", f"{r['vlamax']:.3f} mmol/l/s")
+    st.metric("Empfohlener FTP (TrainingPeaks)", f"{r['ftp_corr']:.0f} W")
+    st.caption(f"entspricht ca. {r['ftp_corr']/r['cp']*100:.1f}% von CP – automatisch korrigiert nach VLamax")
+    #st.caption("VO₂: Formel B = 7 + 10.8 × (P5/kg)")
 
     st.subheader("📊 Ergebnisse")
     df = pd.DataFrame({
