@@ -27,7 +27,7 @@ def calc_zones(cp, hfmax, fatmax_w, vlamax):
     # z3_upper = 0.90 * (1 + s)
     # z4_upper = 1.05 * (1 + s)
     # Schwellenbereich (Z4) dynamisch nach VLamax anpassen
-    z3_upper = (0.90 + 0.05 * (0.5 - v)) * (1 + s)
+    z3_upper = (0.94 + 0.05 * (0.5 - v)) * (1 + s)
     z4_upper = (1.05 + 0.05 * (0.3 - v)) * (1 + s)
 
     # --- FatMax-Korrektur: FatMax immer innerhalb von Zone 2 (GA1) ---
