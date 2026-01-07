@@ -197,10 +197,10 @@ st.sidebar.subheader("Leistungstests (All-Out)")
 c1, c2 = st.sidebar.columns(2)
 with c1:
     p1min  = st.number_input("1-min Power (W)",  0.0, 2000.0, 0.0, step=5.0)
-    p5min  = st.number_input("5-min Power (W)",  0.0, 2000.0, 350.0, step=5.0)
+    p5min  = st.number_input("5-min Power (W)",  0.0, 2000.0, 0.0, step=5.0)
 with c2:
     p3min  = st.number_input("3-min Power (W)",  0.0, 2000.0, 0.0, step=5.0)
-    p12min = st.number_input("12-min Power (W)", 0.0, 2000.0, 300.0, step=5.0)
+    p12min = st.number_input("12-min Power (W)", 0.0, 2000.0, 0.0, step=5.0)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Sprintdaten für VLamax")
