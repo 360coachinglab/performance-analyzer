@@ -2,7 +2,7 @@
 
 - Uses 5-min power as the main anchor.
 - VO2max (relative) is computed as the mean of two common linear formulas (A and B).
-- If a 3-min value is available, a blended estimate is returned as well (default 60% 5-min, 40% 3-min).
+- If both 3-min and 5-min values are available, a blended estimate is returned as well (default 70% 5-min, 30% 3-min).
 - A 12-min value is used only for plausibility checks (not mixed into VO2max).
 
 All VO2 values are returned as:
@@ -97,8 +97,8 @@ def calc_vo2max(
         vo2_rel_final = vo2_rel_3_anchor
         flags = ["Kein 5min-Wert vorhanden: VO2max basiert nur auf 3min (Fallback, weniger robust)"]
 
-    # --- Optional: 3-min blended estimate (only if P5 is available; otherwise P3 is already the anchor)
-    if p3min_w is not None and p3_ok:
+    # --- Optional: 3-min blended estimate (only if BOTH P5 and P3 are available)
+    if p5_ok and p3_ok:
         if p3min_w <= 0:
             flags.append("P3 invalid (<=0) -> ignored")
         else:
