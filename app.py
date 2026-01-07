@@ -157,6 +157,7 @@ def compute_analysis(inputs: dict) -> dict:
         "vlamax": vlamax, "model_used": model_used,
         "vo2_abs": vo2_abs, "vo2_rel": vo2_rel,
         "cp": cp, "w_prime": w_prime, "ftp": ftp, "ftp_wkg": ftp_wkg,
+        "consistency": consistency,
         "fatmax_w": fatmax_w, "fatmax_pct_ftp": fatmax_pct_ftp,
         "ga1_min": ga1_min, "ga1_max": ga1_max, "ga1_pct_min": ga1_pct_min, "ga1_pct_max": ga1_pct_max,
         "zones_df": zones_df, "athlete_type": athlete_type, "pts": pts
@@ -230,6 +231,7 @@ if st.session_state["results"] is None:
 # Ergebnisse & Dashboard
 # -----------------------------
 r = st.session_state["results"]
+consistency = r.get("consistency")
 
 st.subheader("⚙️ Leistungskennzahlen")
 m1, m2, m3 = st.columns(3)
