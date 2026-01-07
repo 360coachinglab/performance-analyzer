@@ -45,11 +45,11 @@ def calc_critical_power(p1min, p3min, p5min, p12min, eps: float = 1.0):
             cp = cap  # hier "klebt" CP dann bewusst an P12
 
 
-import streamlit as st
-st.sidebar.write({
-    "DEBUG_p3": p3min, "DEBUG_p5": p5min, "DEBUG_p12": p12min,
-    "DEBUG_cp": cp, "DEBUG_wp": wp if "wp" in locals() else None
-})
+    import streamlit as st
+    st.sidebar.write({
+        "DEBUG_p3": p3min, "DEBUG_p5": p5min, "DEBUG_p12": p12min,
+        "DEBUG_cp": cp, "DEBUG_wp": wp if "wp" in locals() else None
+    })
 
 
 
