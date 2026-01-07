@@ -63,16 +63,49 @@ def calc_critical_power(p1min=None, p3min=None, p5min=None, p12min=None):
 
 
 def corrected_ftp(cp: float, vlamax: float = None) -> float:
+    """
+    FTP als praxisnahe 60-min-Leistung aus CP,
+    abhängig von der anaeroben Prägung (VLamax).
+    """
+
     if vlamax is None:
         factor = 0.97
-    elif vlamax <= 0.30:
-        factor = 0.99
-    elif vlamax <= 0.45:
-        factor = 0.975
-    elif vlamax <= 0.60:
-        factor = 0.95
-    elif vlamax <= 0.75:
-        factor = 0.93
     else:
-        factor = 0.91
+        # Stützstellen: (VLamax, FTP/CP)
+        anchors = [
+            (0.30, 0.99),   # sehr diesel
+            (0.45, 0.975),
+            (0.60, 0.95),
+            (0.75, 0.91),   # stark anaerob
+            (0.90, 0.885),
+            (1.10, 0.87),
+        ]
+
+        # Clamp
+        v = max(anchors[0][0], min(anchors[-1][0], float(vlamax)))
+
+        # Lineare Interpolation
+        for (v0, f0), (v1, f1) in zip(anchors, anchors[1:]):
+            if v0 <= v <= v1:
+                t = (v - v0) / (v1 - v0)
+                factor = f0 + t * (f1 - f0)
+                break
+
     return round(cp * factor, 1)
+
+
+
+#def corrected_ftp(cp: float, vlamax: float = None) -> float:
+#    if vlamax is None:
+#        factor = 0.97
+#    elif vlamax <= 0.30:
+#        factor = 0.99
+#    elif vlamax <= 0.45:
+#        factor = 0.975
+#    elif vlamax <= 0.60:
+#        factor = 0.95
+#    elif vlamax <= 0.75:
+#        factor = 0.93
+#    else:
+#        factor = 0.91
+#    return round(cp * factor, 1)
