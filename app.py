@@ -84,49 +84,49 @@ def compute_analysis(inputs: dict) -> dict:
 
 
 
-# --- CP Konsistenzindikator (nur bei 3 Punkten: 3/5/12) ---
-fit_pts = []
-if p3min > 0:  fit_pts.append((180.0, p3min, "3min"))
-if p5min > 0:  fit_pts.append((300.0, p5min, "5min"))
-if p12min > 0: fit_pts.append((720.0, p12min, "12min"))
+    # --- CP Konsistenzindikator (nur bei 3 Punkten: 3/5/12) ---
+    fit_pts = []
+    if p3min > 0:  fit_pts.append((180.0, p3min, "3min"))
+    if p5min > 0:  fit_pts.append((300.0, p5min, "5min"))
+    if p12min > 0: fit_pts.append((720.0, p12min, "12min"))
 
-consistency = None
+    consistency = None
 
-# Nur auswerten, wenn ALLE drei Punkte vorhanden sind
-if len(fit_pts) == 3 and cp > 0 and w_prime >= 0:
-    errs_pct = []
-    residuals = {}
+    # Nur auswerten, wenn ALLE drei Punkte vorhanden sind
+    if len(fit_pts) == 3 and cp > 0 and w_prime >= 0:
+        errs_pct = []
+        residuals = {}
 
-    for t_sec, p_meas, label in fit_pts:
-        p_pred = cp + (w_prime / t_sec)
-        err_pct = abs(p_meas - p_pred) / max(1e-9, p_meas) * 100.0
-        errs_pct.append(err_pct)
-        residuals[label] = p_meas - p_pred
+        for t_sec, p_meas, label in fit_pts:
+            p_pred = cp + (w_prime / t_sec)
+            err_pct = abs(p_meas - p_pred) / max(1e-9, p_meas) * 100.0
+            errs_pct.append(err_pct)
+            residuals[label] = p_meas - p_pred
 
-    mape = float(np.mean(errs_pct))
+        mape = float(np.mean(errs_pct))
 
-    # Ampel-Logik
-    if mape <= 3.0:
-        grade, emoji = "hoch", "🟢"
-    elif mape <= 6.0:
-        grade, emoji = "mittel", "🟡"
-    else:
-        grade, emoji = "niedrig", "🔴"
+        # Ampel-Logik
+        if mape <= 3.0:
+            grade, emoji = "hoch", "🟢"
+        elif mape <= 6.0:
+            grade, emoji = "mittel", "🟡"
+        else:
+            grade, emoji = "niedrig", "🔴"
 
-    # Diagnose-Hinweis (typische Muster)
-    hint = ""
-    r12 = residuals.get("12min", 0.0)
-    if r12 < -0.05 * p12min:
-        hint = "12-min liegt deutlich **unter** der Modellkurve → vermutlich nicht maximal / pacing / Ermüdung."
-    elif r12 > 0.05 * p12min:
-        hint = "12-min liegt deutlich **über** der Modellkurve → 3/5-min evtl. nicht maximal oder Messfehler."
+        # Diagnose-Hinweis (typische Muster)
+        hint = ""
+        r12 = residuals.get("12min", 0.0)
+        if r12 < -0.05 * p12min:
+            hint = "12-min liegt deutlich **unter** der Modellkurve → vermutlich nicht maximal / pacing / Ermüdung."
+        elif r12 > 0.05 * p12min:
+            hint = "12-min liegt deutlich **über** der Modellkurve → 3/5-min evtl. nicht maximal oder Messfehler."
 
-    consistency = {
-        "mape": mape,
-        "grade": grade,
-        "emoji": emoji,
-        "hint": hint
-    }
+        consistency = {
+            "mape": mape,
+            "grade": grade,
+            "emoji": emoji,
+            "hint": hint
+        }
 
 
 
