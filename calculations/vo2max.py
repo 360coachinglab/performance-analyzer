@@ -49,7 +49,7 @@ class VO2MaxResult:
 
 def calc_vo2max(
     weight_kg: float,
-    p5min_w: float,
+    p5min_w: Optional[float] = None,
     p3min_w: Optional[float] = None,
     p12min_w: Optional[float] = None,
     blend_w5: float = 0.7,
@@ -58,7 +58,7 @@ def calc_vo2max(
 
     Args:
         weight_kg: Athlete body mass in kg (>0).
-        p5min_w: 5-min mean maximal power in watts (>0). Used as main anchor.
+        p5min_w: Optional 5-min mean maximal power in watts. Preferred anchor if provided.
         p3min_w: Optional 3-min mean maximal power in watts.
         p12min_w: Optional 12-min mean maximal power in watts (plausibility only).
         blend_w5: Weight for 5-min estimate when 3-min is present.
@@ -71,27 +71,39 @@ def calc_vo2max(
 
     if weight_kg <= 0:
         raise ValueError("Gewicht muss > 0 sein.")
-    if p5min_w <= 0:
-        raise ValueError("5min-Wert muss > 0 sein.")
+
+    # At least one anchor (P5 preferred, else P3) must be provided.
+    p5_ok = p5min_w is not None and float(p5min_w) > 0
+    p3_ok = p3min_w is not None and float(p3min_w) > 0
+    if not p5_ok and not p3_ok:
+        raise ValueError("Mindestens ein Wert muss vorhanden sein: 5min oder 3min (Watt > 0).")
 
     flags: List[str] = []
     details: dict = {}
 
-    # --- Base: 5-min VO2max from mean(formula A, B)
-    vo2_rel_5 = _mean_of_formulas(p5min_w, weight_kg)
-    details["vo2_rel_5"] = vo2_rel_5
-    details["vo2_abs_5"] = _to_abs_l_min(vo2_rel_5, weight_kg)
+    # --- Base anchor: prefer 5-min if available, else fall back to 3-min
+    if p5_ok:
+        vo2_rel_5 = _mean_of_formulas(float(p5min_w), weight_kg)
+        details["vo2_rel_5"] = vo2_rel_5
+        details["vo2_abs_5"] = _to_abs_l_min(vo2_rel_5, weight_kg)
+        method = "P5_mean(A,B)"
+        vo2_rel_final = vo2_rel_5
+    else:
+        # Fallback when no 5-min value is provided
+        vo2_rel_3_anchor = _mean_of_formulas(float(p3min_w), weight_kg)
+        details["vo2_rel_3"] = vo2_rel_3_anchor
+        details["vo2_abs_3"] = _to_abs_l_min(vo2_rel_3_anchor, weight_kg)
+        method = "P3_mean(A,B)_fallback(no_P5)"
+        vo2_rel_final = vo2_rel_3_anchor
+        flags = ["Kein 5min-Wert vorhanden: VO2max basiert nur auf 3min (Fallback, weniger robust)"]
 
-    method = "P5_mean(A,B)"
-    vo2_rel_final = vo2_rel_5
-
-    # --- Optional: 3-min blended estimate
-    if p3min_w is not None:
+    # --- Optional: 3-min blended estimate (only if P5 is available; otherwise P3 is already the anchor)
+    if p3min_w is not None and p3_ok:
         if p3min_w <= 0:
             flags.append("P3 invalid (<=0) -> ignored")
         else:
             # plausibility: typically P3 >= P5. If not, likely non-max test or data mismatch
-            if p3min_w < p5min_w:
+            if p5_ok and float(p3min_w) < float(p5min_w):
                 flags.append("P3 < P5: mögliches Daten-/Testproblem (3min war nicht maximal?)")
 
             vo2_rel_3 = _mean_of_formulas(p3min_w, weight_kg)
@@ -109,22 +121,22 @@ def calc_vo2max(
             details["blend_w3"] = w3
 
             # ratios as diagnostics (helpful for debugging/coaching)
-            details["ratio_p3_p5"] = float(p3min_w) / float(p5min_w) if p5min_w else None
+            details["ratio_p3_p5"] = (float(p3min_w) / float(p5min_w)) if p5_ok else None
 
     # --- Optional: 12-min plausibility checks (do not mix into VO2max)
     if p12min_w is not None:
         if p12min_w <= 0:
             flags.append("P12 invalid (<=0) -> ignored")
         else:
-            details["ratio_p12_p5"] = float(p12min_w) / float(p5min_w) if p5min_w else None
-            if p12min_w >= p5min_w:
+            details["ratio_p12_p5"] = (float(p12min_w) / float(p5min_w)) if p5_ok else None
+            if p5_ok and float(p12min_w) >= float(p5min_w):
                 flags.append("P12 >= P5: sehr unwahrscheinlich (Datenfehler oder falsche Zuordnung)")
             if p3min_w is not None and p3min_w > 0 and p12min_w >= p3min_w:
                 flags.append("P12 >= P3: sehr unwahrscheinlich (Datenfehler oder falsche Zuordnung)")
 
             # soft warning: if 12-min is very close to 5-min, 5-min might not be truly maximal
             # (threshold intentionally conservative)
-            if p12min_w / p5min_w > 0.92:
+            if p5_ok and (float(p12min_w) / float(p5min_w)) > 0.92:
                 flags.append("P12 sehr nah an P5: 5min evtl. nicht maximal oder Pacing sehr konservativ")
 
     vo2_abs_final = _to_abs_l_min(vo2_rel_final, weight_kg)
