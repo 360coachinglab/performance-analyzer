@@ -1,3 +1,7 @@
+import streamlit as st
+st.sidebar.warning("DEBUG: critical_power.py NEW LOADED")
+
+
 import numpy as np
 
 def _best_wp_for_cp(cp: float, t: np.ndarray, P: np.ndarray) -> float:
