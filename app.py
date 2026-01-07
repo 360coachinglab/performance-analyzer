@@ -71,7 +71,25 @@ def compute_analysis(inputs: dict) -> dict:
         model_used = "Classic-Fallback"
 
     # --- VO2max (Formel B: 7 + 10.8 * (P5/kg))
-    vo2_abs, vo2_rel = calc_vo2max(p5min, weight, gender, method="B")
+    #vo2_abs, vo2_rel = calc_vo2max(p5min, weight, gender, method="B")
+
+    # --- VO2max ---
+    vo2_abs, vo2_rel = calc_vo2max(
+        p5min if p5min > 0 else None,
+        weight,
+        gender,
+        method="MEAN",                 # Mittelwert A + B
+        p3min_w=p3min if p3min > 0 else None,
+        p12min_w=p12min if p12min > 0 else None,
+        blend_w5=0.7                   # 3min max 30%
+)
+
+
+
+
+
+
+
 
     # --- CP/W′ NUR aus 1/3/5/12-min Tests
     # (keine 20 s oder andere Sprints!)
