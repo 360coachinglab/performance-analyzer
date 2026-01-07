@@ -1,76 +1,139 @@
-import numpy as np
 
-def calc_critical_power(p1min, p3min, p5min, p12min):
+# calculations/critical_power.py
+# Option A: CP is derived ONLY from durations >= 3 minutes (3/5/12min if present).
+# W′ is then estimated from short-duration efforts (20s peak and optional 1min).
+
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Optional, List, Tuple
+
+
+@dataclass
+class CPResult:
+    cp: float
+    w_prime: float
+    cp_method: str
+    wprime_method: str
+
+
+def _work_time_fit(long_points: List[Tuple[float, float]]) -> Tuple[float, float]:
+    """Linear regression in Work-Time domain: Work = CP*t + W'. Returns (CP, W')."""
+    t = [pt[0] for pt in long_points]
+    w = [pt[0] * pt[1] for pt in long_points]  # Joules
+
+    t_mean = sum(t) / len(t)
+    w_mean = sum(w) / len(w)
+
+    var_t = sum((ti - t_mean) ** 2 for ti in t)
+    if var_t <= 0:
+        cp = min(pt[1] for pt in long_points)
+        w_prime = max(0.0, w_mean - cp * t_mean)
+        return cp, w_prime
+
+    cov_tw = sum((ti - t_mean) * (wi - w_mean) for ti, wi in zip(t, w))
+    cp = cov_tw / var_t
+    w_prime = w_mean - cp * t_mean
+    return cp, w_prime
+
+
+def _clamp_cp(cp: float, long_points: List[Tuple[float, float]]) -> float:
+    min_p = min(p for _, p in long_points)
+    avg_p = sum(p for _, p in long_points) / len(long_points)
+
+    lo = 0.50 * min_p
+    hi = min_p  # never above the weakest long point
+    cp = max(lo, min(hi, cp))
+    cp = min(cp, avg_p)
+    return cp
+
+
+def _estimate_wprime(cp: float,
+                     p20s: Optional[float] = None,
+                     p1min: Optional[float] = None) -> Tuple[float, str]:
+    """Estimate W′ from short-duration points: max((P-CP)*t)."""
+    candidates = []
+    if p20s is not None and p20s > 0:
+        candidates.append(((p20s - cp) * 20.0, "20s"))
+    if p1min is not None and p1min > 0:
+        candidates.append(((p1min - cp) * 60.0, "1min"))
+
+    if not candidates:
+        return 0.0, "none"
+
+    wj, label = max(candidates, key=lambda x: x[0])
+    return max(0.0, wj), f"max((P-CP)*t) from {label}"
+
+
+def calc_critical_power(
+    p5min: float,
+    p12min: float,
+    p20s: Optional[float] = None,
+    p1min: Optional[float] = None,
+    p3min: Optional[float] = None,
+) -> tuple[float, float]:
+    """Return (CP, W′).
+
+    Option A:
+    - CP from points >= 3 minutes (3/5/12min).
+    - W′ from short points (20s peak, optional 1min): W′ = max((P-CP)*t).
     """
-    Berechnet Critical Power (CP) und W′ basierend auf 1-, 3-, 5- und 12-min All-Out-Tests.
-    - Regression nach Modell P = W′/t + CP
-    - längere Intervalle werden stärker gewichtet
-    - CP liegt immer unterhalb der längsten getesteten Leistung (12-min)
-    """
+    long_points: List[Tuple[float, float]] = []
+    if p3min is not None and p3min > 0:
+        long_points.append((180.0, float(p3min)))
+    if p5min is not None and p5min > 0:
+        long_points.append((300.0, float(p5min)))
+    if p12min is not None and p12min > 0:
+        long_points.append((720.0, float(p12min)))
 
-    # Eingabepunkte (Zeit in s, Leistung in W)
-    raw_pts = [
-        (60,  p1min),
-        (180, p3min),
-        (300, p5min),
-        (720, p12min)
-    ]
-    pts = [(t, p) for t, p in raw_pts if p is not None and p > 0]
-
-    if len(pts) < 2:
-        cp_est = round((p5min or 0) * 0.9, 1)
-        w_est  = round(((p1min or 0) - cp_est) * 15, 1)
-        return cp_est, w_est
-
-    t = np.array([t for t, _ in pts], dtype=float)
-    P = np.array([p for _, p in pts], dtype=float)
-
-    # Gewichtung: längere Intervalle stärker (aerob relevanter)
-    weights = (t / np.max(t)) ** 2.0
-
-    inv_t = 1.0 / t
-    X = np.vstack([inv_t, np.ones_like(inv_t)]).T
-    W = np.diag(weights)
-
-    # Regression: P = a*(1/t) + b
-    beta = np.linalg.pinv(X.T @ W @ X) @ (X.T @ W @ P)
-    a, b = beta[0], beta[1]
-
-    cp = float(b)
-    wp = float(a)
-
-    # CP darf nie >= längster Testleistung (12min)
-    P_long = float(P[t.argmax()])
-    if cp >= P_long:
-        cp = P_long - 1.0
-
-    cp = max(0, cp)
-    wp = max(0, wp)
-
-    return round(cp, 1), round(wp, 1)
-
-
-def corrected_ftp(cp: float, vlamax: float = None) -> float:
-    """
-    FTP-Berechnung (metabolisch modelliert)
-    ---------------------------------------
-    - basiert auf CP (aerob)
-    - stark abhängig von VLamax (anaerob)
-    - liefert Trainings-FTP für TrainingPeaks
-    """
-
-    if vlamax is None:
-        factor = 0.97
-    elif vlamax <= 0.30:
-        factor = 0.99   # Dieseltyp
-    elif vlamax <= 0.45:
-        factor = 0.975  # Allrounder
-    elif vlamax <= 0.60:
-        factor = 0.95   # Mischtyp
-    elif vlamax <= 0.75:
-        factor = 0.93   # Sprinter
+    if len(long_points) >= 2:
+        cp_raw, _wprime_fit = _work_time_fit(long_points)
+        cp = _clamp_cp(cp_raw, long_points)
     else:
-        factor = 0.91   # sehr anaerob
+        if p12min is not None and p12min > 0:
+            cp = 0.95 * float(p12min)
+        elif p5min is not None and p5min > 0:
+            cp = 0.90 * float(p5min)
+        elif p3min is not None and p3min > 0:
+            cp = 0.85 * float(p3min)
+        else:
+            raise ValueError("Not enough data to estimate CP (need at least one of 3/5/12min).")
 
-    ftp = cp * factor
-    return round(ftp, 1)
+    w_prime, _ = _estimate_wprime(cp, p20s=p20s, p1min=p1min)
+
+    return round(cp, 1), round(w_prime, 1)
+
+
+def calc_critical_power_verbose(
+    p5min: float,
+    p12min: float,
+    p20s: Optional[float] = None,
+    p1min: Optional[float] = None,
+    p3min: Optional[float] = None,
+) -> CPResult:
+    long_points: List[Tuple[float, float]] = []
+    if p3min is not None and p3min > 0:
+        long_points.append((180.0, float(p3min)))
+    if p5min is not None and p5min > 0:
+        long_points.append((300.0, float(p5min)))
+    if p12min is not None and p12min > 0:
+        long_points.append((720.0, float(p12min)))
+
+    if len(long_points) >= 2:
+        cp_raw, _wprime_fit = _work_time_fit(long_points)
+        cp = _clamp_cp(cp_raw, long_points)
+        cp_method = "work-time fit (>=3min)"
+    else:
+        if p12min is not None and p12min > 0:
+            cp = 0.95 * float(p12min)
+            cp_method = "fallback: 0.95 * P12"
+        elif p5min is not None and p5min > 0:
+            cp = 0.90 * float(p5min)
+            cp_method = "fallback: 0.90 * P5"
+        elif p3min is not None and p3min > 0:
+            cp = 0.85 * float(p3min)
+            cp_method = "fallback: 0.85 * P3"
+        else:
+            raise ValueError("Not enough data to estimate CP (need at least one of 3/5/12min).")
+
+    w_prime, w_method = _estimate_wprime(cp, p20s=p20s, p1min=p1min)
+    return CPResult(cp=round(cp, 1), w_prime=round(w_prime, 1), cp_method=cp_method, wprime_method=w_method)
