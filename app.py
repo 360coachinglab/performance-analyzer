@@ -155,7 +155,7 @@ if start:
     # Für CP brauchen wir mind. 2 Punkte aus 3/5/12 (1min zählt NICHT)
     n_cp_pts = sum([x > 0 for x in [p3min, p5min, p12min]])
     if n_cp_pts < 2:
-    st.warning("Bitte mindestens **zwei** CP-Testwerte aus **3/5/12 min** eingeben (z.B. 12+5 oder 12+3).")
+        st.warning("Bitte mindestens **zwei** CP-Testwerte aus **3/5/12 min** eingeben (z.B. 12+5 oder 12+3).")
     st.stop()
     else:
         inputs = dict(
