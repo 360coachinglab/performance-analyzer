@@ -1,40 +1,42 @@
-"""VO2max estimation utilities (field-test based).
+"""calculations/vo2max.py — VO2max estimation (backward compatible)
 
-- Uses 5-min power as the main anchor.
-- VO2max (relative) is computed as the mean of two common linear formulas (A and B).
-- If both 3-min and 5-min values are available, a blended estimate is returned as well (default 70% 5-min, 30% 3-min).
-- A 12-min value is used only for plausibility checks (not mixed into VO2max).
+Your app (app.py) calls:
 
-All VO2 values are returned as:
-- vo2_abs_l_min: absolute VO2max in L/min
-- vo2_rel_ml_kg_min: relative VO2max in ml/kg/min
+    vo2_abs, vo2_rel = calc_vo2max(p5min, weight, gender, method="B")
+
+This module keeps that API **unchanged** while adding:
+- method="MEAN" (default): mean of Formula A and B
+- optional p3min_w for blending (default 70% P5 / 30% P3). Blend only if BOTH P5 and P3 > 0.
+- optional p12min_w for plausibility flags (NOT mixed into VO2max)
+- fallback: if P5 missing/<=0 but P3 exists -> compute from P3
+
+Formulas (relative, ml/kg/min):
+- A: 16.6 + 8.87 * (W/kg)
+- B:  7.0 + 10.8 * (W/kg)
+- MEAN: (A + B) / 2
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 def _rel_from_formula_a(power_w: float, kg: float) -> float:
-    # VO2max [ml/kg/min] = 16.6 + 8.87 * (W/kg)
     return 16.6 + 8.87 * (float(power_w) / float(kg))
 
 
 def _rel_from_formula_b(power_w: float, kg: float) -> float:
-    # VO2max [ml/kg/min] = 7.0 + 10.8 * (W/kg)
     return 7.0 + 10.8 * (float(power_w) / float(kg))
 
 
-def _mean_of_formulas(power_w: float, kg: float) -> float:
-    """Return mean(Formula A, Formula B) for a given power."""
+def _rel_from_mean(power_w: float, kg: float) -> float:
     a = _rel_from_formula_a(power_w, kg)
     b = _rel_from_formula_b(power_w, kg)
     return (a + b) / 2.0
 
 
 def _to_abs_l_min(vo2_rel_ml_kg_min: float, kg: float) -> float:
-    # ml/kg/min * kg = ml/min -> /1000 = L/min
     return (float(vo2_rel_ml_kg_min) * float(kg)) / 1000.0
 
 
@@ -44,107 +46,123 @@ class VO2MaxResult:
     vo2_rel_ml_kg_min: float
     method: str
     flags: List[str]
-    details: dict
+    details: Dict[str, Any]
 
 
-def calc_vo2max(
+def calc_vo2max_result(
+    p5min_w: Optional[float],
     weight_kg: float,
-    p5min_w: Optional[float] = None,
+    gender: str = "Mann",
+    method: str = "MEAN",
+    *,
     p3min_w: Optional[float] = None,
     p12min_w: Optional[float] = None,
     blend_w5: float = 0.7,
 ) -> VO2MaxResult:
-    """Estimate VO2max from field test powers.
-
-    Args:
-        weight_kg: Athlete body mass in kg (>0).
-        p5min_w: Optional 5-min mean maximal power in watts. Preferred anchor if provided.
-        p3min_w: Optional 3-min mean maximal power in watts.
-        p12min_w: Optional 12-min mean maximal power in watts (plausibility only).
-        blend_w5: Weight for 5-min estimate when 3-min is present.
-                  3-min weight is (1 - blend_w5).
-                  Default 0.7 -> 70% 5-min, 30% 3-min (3-min maximal 30% Einfluss).
-
-    Returns:
-        VO2MaxResult with VO2max (abs/rel), flags, and details.
-    """
+    """Rich result (with flags/details)."""
 
     if weight_kg <= 0:
         raise ValueError("Gewicht muss > 0 sein.")
 
-    # At least one anchor (P5 preferred, else P3) must be provided.
     p5_ok = p5min_w is not None and float(p5min_w) > 0
     p3_ok = p3min_w is not None and float(p3min_w) > 0
+
     if not p5_ok and not p3_ok:
         raise ValueError("Mindestens ein Wert muss vorhanden sein: 5min oder 3min (Watt > 0).")
 
-    flags: List[str] = []
-    details: dict = {}
-
-    # --- Base anchor: prefer 5-min if available, else fall back to 3-min
-    if p5_ok:
-        vo2_rel_5 = _mean_of_formulas(float(p5min_w), weight_kg)
-        details["vo2_rel_5"] = vo2_rel_5
-        details["vo2_abs_5"] = _to_abs_l_min(vo2_rel_5, weight_kg)
-        method = "P5_mean(A,B)"
-        vo2_rel_final = vo2_rel_5
+    m = (method or "MEAN").strip().upper()
+    if m == "A":
+        rel_fn = _rel_from_formula_a
+        m_label = "A"
+    elif m == "B":
+        rel_fn = _rel_from_formula_b
+        m_label = "B"
     else:
-        # Fallback when no 5-min value is provided
-        vo2_rel_3_anchor = _mean_of_formulas(float(p3min_w), weight_kg)
+        rel_fn = _rel_from_mean
+        m_label = "MEAN(A,B)"
+
+    flags: List[str] = []
+    details: Dict[str, Any] = {"gender": gender, "method_input": method}
+
+    # Anchor (prefer P5)
+    if p5_ok:
+        vo2_rel_5 = rel_fn(float(p5min_w), weight_kg)
+        details["vo2_rel_5"] = vo2_rel_5
+        details["p5min_w"] = float(p5min_w)
+        vo2_rel_final = vo2_rel_5
+        method_used = f"P5_{m_label}"
+    else:
+        vo2_rel_3_anchor = rel_fn(float(p3min_w), weight_kg)
         details["vo2_rel_3"] = vo2_rel_3_anchor
-        details["vo2_abs_3"] = _to_abs_l_min(vo2_rel_3_anchor, weight_kg)
-        method = "P3_mean(A,B)_fallback(no_P5)"
+        details["p3min_w"] = float(p3min_w)
         vo2_rel_final = vo2_rel_3_anchor
-        flags = ["Kein 5min-Wert vorhanden: VO2max basiert nur auf 3min (Fallback, weniger robust)"]
+        method_used = f"P3_{m_label}_fallback(no_P5)"
+        flags.append("Kein 5min-Wert: VO2max basiert nur auf 3min (Fallback, weniger robust)")
 
-    # --- Optional: 3-min blended estimate (only if BOTH P5 and P3 are available)
+    # Blend only if BOTH present
     if p5_ok and p3_ok:
-        if p3min_w <= 0:
-            flags.append("P3 invalid (<=0) -> ignored")
-        else:
-            # plausibility: typically P3 >= P5. If not, likely non-max test or data mismatch
-            if p5_ok and float(p3min_w) < float(p5min_w):
-                flags.append("P3 < P5: mögliches Daten-/Testproblem (3min war nicht maximal?)")
+        w5 = float(blend_w5)
+        if not (0.0 <= w5 <= 1.0):
+            raise ValueError("blend_w5 muss zwischen 0 und 1 liegen.")
+        w3 = 1.0 - w5
 
-            vo2_rel_3 = _mean_of_formulas(p3min_w, weight_kg)
-            details["vo2_rel_3"] = vo2_rel_3
-            details["vo2_abs_3"] = _to_abs_l_min(vo2_rel_3, weight_kg)
+        vo2_rel_3 = rel_fn(float(p3min_w), weight_kg)
+        details["vo2_rel_3"] = vo2_rel_3
+        details["p3min_w"] = float(p3min_w)
+        details["blend_w5"] = w5
+        details["blend_w3"] = w3
+        details["ratio_p3_p5"] = float(p3min_w) / float(p5min_w)
 
-            w5 = float(blend_w5)
-            if not (0.0 <= w5 <= 1.0):
-                raise ValueError("blend_w5 muss zwischen 0 und 1 liegen.")
-            w3 = 1.0 - w5
+        if float(p3min_w) < float(p5min_w):
+            flags.append("P3 < P5: mögliches Daten-/Testproblem (3min war nicht maximal?)")
 
-            vo2_rel_final = w5 * vo2_rel_5 + w3 * vo2_rel_3
-            method = f"blend(P5_mean(A,B)*{w5:.2f} + P3_mean(A,B)*{w3:.2f})"
-            details["blend_w5"] = w5
-            details["blend_w3"] = w3
+        vo2_rel_final = w5 * vo2_rel_5 + w3 * vo2_rel_3
+        method_used = f"blend(P5_{m_label}*{w5:.2f}+P3_{m_label}*{w3:.2f})"
 
-            # ratios as diagnostics (helpful for debugging/coaching)
-            details["ratio_p3_p5"] = (float(p3min_w) / float(p5min_w)) if p5_ok else None
+    # 12-min plausibility (no mixing)
+    if p12min_w is not None and float(p12min_w) > 0:
+        details["p12min_w"] = float(p12min_w)
 
-    # --- Optional: 12-min plausibility checks (do not mix into VO2max)
-    if p12min_w is not None:
-        if p12min_w <= 0:
-            flags.append("P12 invalid (<=0) -> ignored")
-        else:
-            details["ratio_p12_p5"] = (float(p12min_w) / float(p5min_w)) if p5_ok else None
-            if p5_ok and float(p12min_w) >= float(p5min_w):
+        if p5_ok:
+            ratio = float(p12min_w) / float(p5min_w)
+            details["ratio_p12_p5"] = ratio
+            if float(p12min_w) >= float(p5min_w):
                 flags.append("P12 >= P5: sehr unwahrscheinlich (Datenfehler oder falsche Zuordnung)")
-            if p3min_w is not None and p3min_w > 0 and p12min_w >= p3min_w:
-                flags.append("P12 >= P3: sehr unwahrscheinlich (Datenfehler oder falsche Zuordnung)")
-
-            # soft warning: if 12-min is very close to 5-min, 5-min might not be truly maximal
-            # (threshold intentionally conservative)
-            if p5_ok and (float(p12min_w) / float(p5min_w)) > 0.92:
+            if ratio > 0.92:
                 flags.append("P12 sehr nah an P5: 5min evtl. nicht maximal oder Pacing sehr konservativ")
 
-    vo2_abs_final = _to_abs_l_min(vo2_rel_final, weight_kg)
+        if p3_ok and float(p12min_w) >= float(p3min_w):
+            flags.append("P12 >= P3: sehr unwahrscheinlich (Datenfehler oder falsche Zuordnung)")
+
+    vo2_abs = _to_abs_l_min(vo2_rel_final, weight_kg)
 
     return VO2MaxResult(
-        vo2_abs_l_min=float(vo2_abs_final),
+        vo2_abs_l_min=float(vo2_abs),
         vo2_rel_ml_kg_min=float(vo2_rel_final),
-        method=method,
+        method=method_used,
         flags=flags,
         details=details,
     )
+
+
+def calc_vo2max(
+    p5min_w: Optional[float],
+    weight_kg: float,
+    gender: str = "Mann",
+    method: str = "MEAN",
+    *,
+    p3min_w: Optional[float] = None,
+    p12min_w: Optional[float] = None,
+    blend_w5: float = 0.7,
+) -> Tuple[float, float]:
+    """Backward-compatible API used by app.py: returns (vo2_abs_l_min, vo2_rel_ml_kg_min)."""
+    r = calc_vo2max_result(
+        p5min_w=p5min_w,
+        weight_kg=weight_kg,
+        gender=gender,
+        method=method,
+        p3min_w=p3min_w,
+        p12min_w=p12min_w,
+        blend_w5=blend_w5,
+    )
+    return r.vo2_abs_l_min, r.vo2_rel_ml_kg_min
