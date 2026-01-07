@@ -82,6 +82,56 @@ def compute_analysis(inputs: dict) -> dict:
         p12min=p12min if p12min > 0 else None,
     )
 
+
+
+# --- CP Konsistenzindikator (nur bei 3 Punkten: 3/5/12) ---
+fit_pts = []
+if p3min > 0:  fit_pts.append((180.0, p3min, "3min"))
+if p5min > 0:  fit_pts.append((300.0, p5min, "5min"))
+if p12min > 0: fit_pts.append((720.0, p12min, "12min"))
+
+consistency = None
+
+# Nur auswerten, wenn ALLE drei Punkte vorhanden sind
+if len(fit_pts) == 3 and cp > 0 and w_prime >= 0:
+    errs_pct = []
+    residuals = {}
+
+    for t_sec, p_meas, label in fit_pts:
+        p_pred = cp + (w_prime / t_sec)
+        err_pct = abs(p_meas - p_pred) / max(1e-9, p_meas) * 100.0
+        errs_pct.append(err_pct)
+        residuals[label] = p_meas - p_pred
+
+    mape = float(np.mean(errs_pct))
+
+    # Ampel-Logik
+    if mape <= 3.0:
+        grade, emoji = "hoch", "🟢"
+    elif mape <= 6.0:
+        grade, emoji = "mittel", "🟡"
+    else:
+        grade, emoji = "niedrig", "🔴"
+
+    # Diagnose-Hinweis (typische Muster)
+    hint = ""
+    r12 = residuals.get("12min", 0.0)
+    if r12 < -0.05 * p12min:
+        hint = "12-min liegt deutlich **unter** der Modellkurve → vermutlich nicht maximal / pacing / Ermüdung."
+    elif r12 > 0.05 * p12min:
+        hint = "12-min liegt deutlich **über** der Modellkurve → 3/5-min evtl. nicht maximal oder Messfehler."
+
+    consistency = {
+        "mape": mape,
+        "grade": grade,
+        "emoji": emoji,
+        "hint": hint
+    }
+
+
+
+
+
     # --- FTP stark VLamax-abhängig
     ftp = corrected_ftp(cp, vlamax)
     ftp_wkg = ftp / weight if weight > 0 else 0.0
@@ -183,9 +233,38 @@ r = st.session_state["results"]
 
 st.subheader("⚙️ Leistungskennzahlen")
 m1, m2, m3 = st.columns(3)
+
+
+
 with m1:
-    st.metric("Critical Power (CP)", f"{r['cp']:.0f} W", help="Aerobe Dauerleistungsgrenze (≈ MLSS).")
-    st.metric("W′", f"{r['w_prime']:.0f} J", help="Anaerober Energievorrat oberhalb CP.")
+    st.metric(
+        "Critical Power (CP)",
+        f"{r['cp']:.0f} W",
+        help="Aerobe Dauerleistungsgrenze (≈ MLSS)."
+    )
+
+    st.metric(
+        "W′",
+        f"{r['w_prime']:.0f} J",
+        help="Anaerober Energievorrat oberhalb CP."
+    )
+
+    # --- CP-Konsistenzindikator (nur bei 3/5/12) ---
+    if consistency:
+        st.metric(
+            "CP-Konsistenz (3/5/12)",
+            f"{consistency['emoji']} {consistency['grade']}",
+            help=f"Mittlere Abweichung Modell ↔ Testpunkte: {consistency['mape']:.1f}%"
+        )
+        if consistency["hint"]:
+            st.caption(f"⚠️ {consistency['hint']}")
+    
+    
+    
+    
+    
+    #st.metric("Critical Power (CP)", f"{r['cp']:.0f} W", help="Aerobe Dauerleistungsgrenze (≈ MLSS).")
+    #st.metric("W′", f"{r['w_prime']:.0f} J", help="Anaerober Energievorrat oberhalb CP.")
 with m2:
     st.metric("FTP (60-min)", f"{r['ftp']:.0f} W", help="Für TrainingPeaks als Schwelle eintragen.")
     st.metric("FTP (W/kg)", f"{r['ftp_wkg']:.2f}")
